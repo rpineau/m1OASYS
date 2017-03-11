@@ -35,10 +35,6 @@ X2Dome::X2Dome(const char* pszSelection,
 	m_pTickCount					= pTickCount;
 
 	m_bLinked = false;
-    mHomingDome = false;
-    mCalibratingDome = false;
-    mBattRequest = 0;
-    
     m1OASYS.SetSerxPointer(pSerX);
     m1OASYS.setLogger(pLogger);
 
@@ -201,11 +197,15 @@ int X2Dome::dapiOpen(void)
     int err;
     X2MutexLocker ml(GetMutex());
 
-    if(!m_bLinked)
-        return ERR_NOLINK;
 
-    if(!mHasShutterControl)
-        return SB_OK;
+    snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiOpen]\n");
+    m_pLogger->out(mLogBuffer);
+
+    if(!m_bLinked) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiOpen] NOT CONNECTED\n");
+        m_pLogger->out(mLogBuffer);
+        return ERR_NOLINK;
+    }
 
     err = m1OASYS.openShutter();
     if(err)
@@ -219,11 +219,14 @@ int X2Dome::dapiClose(void)
     int err;
     X2MutexLocker ml(GetMutex());
 
-    if(!m_bLinked)
-        return ERR_NOLINK;
+    snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiClose]\n");
+    m_pLogger->out(mLogBuffer);
 
-    if(!mHasShutterControl)
-        return SB_OK;
+    if(!m_bLinked) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiClose] NOT CONNECTED\n");
+        m_pLogger->out(mLogBuffer);
+        return ERR_NOLINK;
+    }
 
     err = m1OASYS.closeShutter();
     if(err)
@@ -240,12 +243,9 @@ int X2Dome::dapiPark(void)
     if(!m_bLinked)
         return ERR_NOLINK;
 
-    if(mHasShutterControl)
-    {
-        err = m1OASYS.closeShutter();
-        if(err)
-            return ERR_CMDFAILED;
-    }
+    err = m1OASYS.closeShutter();
+    if(err)
+        return ERR_CMDFAILED;
 
     err = m1OASYS.parkDome();
     if(err)
@@ -262,12 +262,9 @@ int X2Dome::dapiUnpark(void)
     if(!m_bLinked)
         return ERR_NOLINK;
 
-    if(mHasShutterControl)
-    {
-        err = m1OASYS.openShutter();
-        if(err)
-            return ERR_CMDFAILED;
-    }
+    err = m1OASYS.openShutter();
+    if(err)
+        return ERR_CMDFAILED;
 
     err = m1OASYS.unparkDome();
     if(err)
@@ -278,7 +275,6 @@ int X2Dome::dapiUnpark(void)
 
 int X2Dome::dapiFindHome(void)
 {
-    int err;
     X2MutexLocker ml(GetMutex());
 
     if(!m_bLinked)
@@ -309,11 +305,6 @@ int X2Dome::dapiIsOpenComplete(bool* pbComplete)
     if(!m_bLinked)
         return ERR_NOLINK;
     
-    if(!mHasShutterControl)
-    {
-        *pbComplete = true;
-        return SB_OK;
-    }
 
     err = m1OASYS.isOpenComplete(*pbComplete);
     if(err)
@@ -329,12 +320,6 @@ int	X2Dome::dapiIsCloseComplete(bool* pbComplete)
 
     if(!m_bLinked)
         return ERR_NOLINK;
-
-    if(!mHasShutterControl)
-    {
-        *pbComplete = true;
-        return SB_OK;
-    }
 
     err = m1OASYS.isCloseComplete(*pbComplete);
     if(err)

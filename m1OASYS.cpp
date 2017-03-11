@@ -60,7 +60,7 @@ int Cm1OASYS::Connect(const char *szPort)
         snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Connected.\n");
         mLogger->out(mLogBuffer);
 
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Getting Firmware.\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Getting shutter state.\n");
         mLogger->out(mLogBuffer);
     }
     // if this fails we're not properly connected.
@@ -72,6 +72,8 @@ int Cm1OASYS::Connect(const char *szPort)
 
     if (bDebugLog) {
         snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Got RoR state.\n");
+        mLogger->out(mLogBuffer);
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] bIsConnected = %u.\n", bIsConnected);
         mLogger->out(mLogBuffer);
     }
 
@@ -270,16 +272,46 @@ int Cm1OASYS::gotoAzimuth(double newAz)
 
 int Cm1OASYS::openShutter()
 {
-    if(!bIsConnected)
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter]\n");
+        mLogger->out(mLogBuffer);
+    }
+
+    if(!bIsConnected) {
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] NOT CONNECTED !!!!\n");
+            mLogger->out(mLogBuffer);
+        }
         return NOT_CONNECTED;
+    }
+
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] Opening RoR.\n");
+        mLogger->out(mLogBuffer);
+    }
 
     return (domeCommand("09tn00100C4\r\n", NULL, SERIAL_BUFFER_SIZE));
 }
 
 int Cm1OASYS::closeShutter()
 {
-    if(!bIsConnected)
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter]\n");
+        mLogger->out(mLogBuffer);
+    }
+
+    if(!bIsConnected) {
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] NOT CONNECTED !!!!\n");
+            mLogger->out(mLogBuffer);
+        }
         return NOT_CONNECTED;
+    }
+
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] Closing RoR.\n");
+        mLogger->out(mLogBuffer);
+    }
 
 
     return (domeCommand("09tn00200C3\r\n", NULL, SERIAL_BUFFER_SIZE));

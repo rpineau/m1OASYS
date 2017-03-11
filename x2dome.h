@@ -139,12 +139,5 @@ private:
 	int         m_nPrivateISIndex;
 	bool        m_bLinked;
     Cm1OASYS    m1OASYS;
-    bool        mHasShutterControl;
-    bool        mOpenUpperShutterOnly;
-    bool        mHomingDome;
-    bool        mCalibratingDome;
     char        mLogBuffer[LOG_BUFFER_SIZE];
-    int         mBattRequest;
-    
-    // bool        mIsRollOffRoof;
 };
