@@ -17,7 +17,7 @@
 Cm1OASYS::Cm1OASYS()
 {
     // set some sane values
-    bDebugLog = false;
+    bDebugLog = true;
 
     pSerx = NULL;
     bIsConnected = false;
@@ -41,6 +41,11 @@ int Cm1OASYS::Connect(const char *szPort)
 {
     int err;
     int state;
+
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Trying to connect to %s.\n", szPort);
+        mLogger->out(mLogBuffer);
+    }
 
     // 9600 8N1
     if(pSerx->open(szPort, 9600, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1") == 0)
@@ -268,7 +273,7 @@ int Cm1OASYS::openShutter()
     if(!bIsConnected)
         return NOT_CONNECTED;
 
-    return (domeCommand("09tn00200C3\r\n", NULL, SERIAL_BUFFER_SIZE));
+    return (domeCommand("09tn00100C4\r\n", NULL, SERIAL_BUFFER_SIZE));
 }
 
 int Cm1OASYS::closeShutter()
@@ -277,7 +282,7 @@ int Cm1OASYS::closeShutter()
         return NOT_CONNECTED;
 
 
-    return (domeCommand("09tn00100C4\r\n", NULL, SERIAL_BUFFER_SIZE));
+    return (domeCommand("09tn00200C3\r\n", NULL, SERIAL_BUFFER_SIZE));
 }
 
 
