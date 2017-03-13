@@ -272,6 +272,9 @@ int Cm1OASYS::gotoAzimuth(double newAz)
 
 int Cm1OASYS::openShutter()
 {
+    int err = RoR_OK;
+    char resp[SERIAL_BUFFER_SIZE];
+
     if (bDebugLog) {
         snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter]\n");
         mLogger->out(mLogBuffer);
@@ -290,11 +293,23 @@ int Cm1OASYS::openShutter()
         mLogger->out(mLogBuffer);
     }
 
-    return (domeCommand("09tn00100C4\r\n", NULL, SERIAL_BUFFER_SIZE));
+    err = domeCommand("09tn00100C4\r\n", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+
+    // check returned data to make sure the command was processed
+    if(!strstr(resp,"0ATC001000D7")) {
+        err = COMMAND_FAILED;
+    }
+
+    return err;
 }
 
 int Cm1OASYS::closeShutter()
 {
+    int err = RoR_OK;
+    char resp[SERIAL_BUFFER_SIZE];
+
     if (bDebugLog) {
         snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter]\n");
         mLogger->out(mLogBuffer);
@@ -313,8 +328,16 @@ int Cm1OASYS::closeShutter()
         mLogger->out(mLogBuffer);
     }
 
+    err = domeCommand("09tn00200C3\r\n", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
 
-    return (domeCommand("09tn00200C3\r\n", NULL, SERIAL_BUFFER_SIZE));
+    // check returned data to make sure the command was processed
+    if(!strstr(resp,"0ATC002000D6")) {
+        err = COMMAND_FAILED;
+    }
+
+    return err;
 }
 
 
