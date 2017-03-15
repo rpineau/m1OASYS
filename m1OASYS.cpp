@@ -298,7 +298,11 @@ int Cm1OASYS::openShutter()
         return err;
 
     // check returned data to make sure the command was processed
-    if(!strstr(resp,"0ATC001000D7")) {
+    if(!strstr(resp,"ATC001000D7")) {
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] ERROR Opening RoR. res = %s\n", resp);
+            mLogger->out(mLogBuffer);
+        }
         err = COMMAND_FAILED;
     }
 
@@ -333,7 +337,11 @@ int Cm1OASYS::closeShutter()
         return err;
 
     // check returned data to make sure the command was processed
-    if(!strstr(resp,"0ATC002000D6")) {
+    if(!strstr(resp,"ATC002000D6")) {
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] ERROR Closing RoR. res = %s\n", resp);
+            mLogger->out(mLogBuffer);
+        }
         err = COMMAND_FAILED;
     }
 
