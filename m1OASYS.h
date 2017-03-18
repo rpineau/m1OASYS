@@ -21,7 +21,7 @@
 enum m1OASYSErrors {RoR_OK=0, NOT_CONNECTED, RoR_CANT_CONNECT, RoR_BAD_CMD_RESPONSE, COMMAND_FAILED};
 
 // Error code
-enum m1OASYSShutterState {OPEN=1, OPENING, CLOSED, CLOSING, SHUTTER_ERROR};
+enum m1OASYSShutterState {OPEN=1, OPENING, CLOSED, CLOSING, SHUTTER_ERROR, UNKNOWN};
 
 class Cm1OASYS
 {
@@ -64,13 +64,14 @@ public:
 
 protected:
 
-    int             readResponse(char *respBuffer, int bufferLen);
+    int             readResponse(char *respBuffer, unsigned int bufferLen);
     int             getDomeAz(double &domeAz);
     int             getDomeEl(double &domeEl);
     int             getShutterState(int &state);
 
     int             domeCommand(const char *cmd, char *result, int resultMaxLen);
-
+    int             enableSensors(void);
+    
     LoggerInterface *mLogger;
     bool            bDebugLog;
 
