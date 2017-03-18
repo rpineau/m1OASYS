@@ -113,9 +113,17 @@ int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
             }
             return err;
         }
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[CRigelDome::readResponse] respBuffer = %s\n",respBuffer);
+            mLogger->out(mLogBuffer);
+        }
 
         if (nBytesRead !=1) {// timeout
             err = RoR_BAD_CMD_RESPONSE;
+            if (bDebugLog) {
+                snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::readResponse] readFile Timeout while getting response.\n");
+                mLogger->out(mLogBuffer);
+            }
             break;
         }
         totalBytesRead += nBytesRead;
