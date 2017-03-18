@@ -37,7 +37,7 @@ X2Dome::X2Dome(const char* pszSelection,
 	m_bLinked = false;
     m1OASYS.SetSerxPointer(pSerX);
     m1OASYS.setLogger(pLogger);
-
+    m1OASYS.setSleeper(pSleeper);
 }
 
 
@@ -198,11 +198,11 @@ int X2Dome::dapiOpen(void)
     X2MutexLocker ml(GetMutex());
 
 
-    snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiOpen]\n");
+    snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiOpen]");
     m_pLogger->out(mLogBuffer);
 
     if(!m_bLinked) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiOpen] NOT CONNECTED\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiOpen] NOT CONNECTED");
         m_pLogger->out(mLogBuffer);
         return ERR_NOLINK;
     }
@@ -219,11 +219,11 @@ int X2Dome::dapiClose(void)
     int err;
     X2MutexLocker ml(GetMutex());
 
-    snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiClose]\n");
+    snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiClose]");
     m_pLogger->out(mLogBuffer);
 
     if(!m_bLinked) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiClose] NOT CONNECTED\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiClose] NOT CONNECTED");
         m_pLogger->out(mLogBuffer);
         return ERR_NOLINK;
     }

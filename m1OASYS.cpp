@@ -43,7 +43,7 @@ int Cm1OASYS::Connect(const char *szPort)
     int err;
     
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Trying to connect to %s.\n", szPort);
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Trying to connect to %s.", szPort);
         mLogger->out(mLogBuffer);
     }
 
@@ -57,10 +57,10 @@ int Cm1OASYS::Connect(const char *szPort)
         return ERR_COMMNOLINK;
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Connected.\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Connected.");
         mLogger->out(mLogBuffer);
 
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Getting shutter state.\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Getting shutter state.");
         mLogger->out(mLogBuffer);
     }
 
@@ -72,9 +72,9 @@ int Cm1OASYS::Connect(const char *szPort)
     }
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] m1OASYS init done.\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] m1OASYS init done.");
         mLogger->out(mLogBuffer);
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] bIsConnected = %u.\n", bIsConnected);
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] bIsConnected = %u.", bIsConnected);
         mLogger->out(mLogBuffer);
     }
 
@@ -108,20 +108,20 @@ int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
         err = pSerx->readFile(bufPtr, 1, nBytesRead, MAX_TIMEOUT);
         if(err) {
             if (bDebugLog) {
-                snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::readResponse] readFile error.\n");
+                snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::readResponse] readFile error.");
                 mLogger->out(mLogBuffer);
             }
             return err;
         }
         if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[CRigelDome::readResponse] respBuffer = %s\n",respBuffer);
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[CRigelDome::readResponse] respBuffer = %s",respBuffer);
             mLogger->out(mLogBuffer);
         }
 
         if (nBytesRead !=1) {// timeout
             err = RoR_BAD_CMD_RESPONSE;
             if (bDebugLog) {
-                snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::readResponse] readFile Timeout while getting response.\n");
+                snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::readResponse] readFile Timeout while getting response.");
                 mLogger->out(mLogBuffer);
             }
             break;
@@ -142,19 +142,19 @@ int Cm1OASYS::domeCommand(const char *cmd, char *result, int resultMaxLen)
 
     pSerx->purgeTxRx();
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::domeCommand] Sending %s\n",cmd);
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::domeCommand] Sending %s",cmd);
         mLogger->out(mLogBuffer);
     }
     err = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
     pSerx->flushTx();
     if(err)
         return err;
-    // read response
+    err = readResponse(resp, SERIAL_BUFFER_SIZE);
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::domeCommand] Getting response.\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::domeCommand] response = %s", resp);
         mLogger->out(mLogBuffer);
     }
-    err = readResponse(resp, SERIAL_BUFFER_SIZE);
+
     if(err)
         return err;
 
@@ -175,7 +175,7 @@ int Cm1OASYS::enableSensors()
         return NOT_CONNECTED;
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::enableSensors]\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::enableSensors] Sending sensor on.");
         mLogger->out(mLogBuffer);
     }
 
@@ -227,26 +227,36 @@ int Cm1OASYS::getDomeEl(double &domeEl)
 int Cm1OASYS::getShutterState(int &state)
 {
     int err = RoR_OK;
+    int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
     if(!bIsConnected)
         return NOT_CONNECTED;
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::getShutterState]\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::getShutterState]");
         mLogger->out(mLogBuffer);
     }
 
     err = domeCommand("09xx00100B6\r\n", resp,  SERIAL_BUFFER_SIZE);
     if(err)
         return err;
+    // wait for a proper response
+    while(!strstr(resp,"open") || !strstr(resp,"open") || !strstr(resp,"unknown")) {
+        if(timeout>50) {
+            err = COMMAND_FAILED;
+            break;
+        }
+        err = readResponse(resp, SERIAL_BUFFER_SIZE);
+        mSleeper->sleep(100);
+        timeout++;
+    }
 
     if(strstr(resp,"open")) {
         state = OPEN;
     } else if (strstr(resp,"close")) {
         state = CLOSED;
-    }
-    else {
+    } else {
         state = UNKNOWN;
     }
     return err;
@@ -302,23 +312,25 @@ int Cm1OASYS::gotoAzimuth(double newAz)
 int Cm1OASYS::openShutter()
 {
     int err = RoR_OK;
+    int timeout = 0;
+    
     char resp[SERIAL_BUFFER_SIZE];
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter]\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter]");
         mLogger->out(mLogBuffer);
     }
 
     if(!bIsConnected) {
         if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] NOT CONNECTED !!!!\n");
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] NOT CONNECTED !!!!");
             mLogger->out(mLogBuffer);
         }
         return NOT_CONNECTED;
     }
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] Sending sensor on.\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] Sending sensor on.");
         mLogger->out(mLogBuffer);
     }
     err = enableSensors();
@@ -327,47 +339,53 @@ int Cm1OASYS::openShutter()
     }
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] Opening RoR.\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] Opening RoR.");
         mLogger->out(mLogBuffer);
     }
 
     err = domeCommand("09tn00100C4\r\n", resp, SERIAL_BUFFER_SIZE);
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::getShutterState] response res = %s\n", resp);
-        mLogger->out(mLogBuffer);
-    }
-
     if(err)
         return err;
 
     // check returned data to make sure the command was processed
-    if(!strstr(resp,"ATC001000D7")) { // 0ACC010100E7 ?
-        err = COMMAND_FAILED;
+    while(!strstr(resp,"ATC001000D7")) {
+        //we're waiting for the answer
+        if(timeout>50) {
+            err = COMMAND_FAILED;
+            break;
+        }
+        err = readResponse(resp, SERIAL_BUFFER_SIZE);
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] response = %s", resp);
+            mLogger->out(mLogBuffer);
+        }
+        mSleeper->sleep(100);
+        timeout++;
     }
-
     return err;
 }
 
 int Cm1OASYS::closeShutter()
 {
     int err = RoR_OK;
+    int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter]\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter]");
         mLogger->out(mLogBuffer);
     }
 
     if(!bIsConnected) {
         if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] NOT CONNECTED !!!!\n");
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] NOT CONNECTED !!!!");
             mLogger->out(mLogBuffer);
         }
         return NOT_CONNECTED;
     }
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] Sending sensor on.\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] Sending sensor on.");
         mLogger->out(mLogBuffer);
     }
     err = enableSensors();
@@ -377,21 +395,27 @@ int Cm1OASYS::closeShutter()
 
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] Closing RoR.\n");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] Closing RoR.");
         mLogger->out(mLogBuffer);
     }
-
     err = domeCommand("09tn00200C3\r\n", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
 
     // check returned data to make sure the command was processed
-    if(!strstr(resp,"ATC002000D6")) { //
+    while(!strstr(resp,"ATC002000D6")) {
+        //we're waiting for the answer
+        if(timeout>50) {
+            err = COMMAND_FAILED;
+            break;
+        }
+        err = readResponse(resp, SERIAL_BUFFER_SIZE);
         if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] ERROR Closing RoR. res = %s\n", resp);
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] response = %s", resp);
             mLogger->out(mLogBuffer);
         }
-        err = COMMAND_FAILED;
+        mSleeper->sleep(100);
+        timeout++;
     }
 
     return err;

@@ -12,6 +12,7 @@
 #include "../../licensedinterfaces/sberrorx.h"
 #include "../../licensedinterfaces/serxinterface.h"
 #include "../../licensedinterfaces/loggerinterface.h"
+#include "../../licensedinterfaces/sleeperinterface.h"
 
 #define SERIAL_BUFFER_SIZE 20
 #define MAX_TIMEOUT 5000
@@ -35,6 +36,7 @@ public:
 
     void        SetSerxPointer(SerXInterface *p) { pSerx = p; }
     void        setLogger(LoggerInterface *pLogger) { mLogger = pLogger; };
+    void        setSleeper(SleeperInterface *pSleeper) { mSleeper = pSleeper; };
 
     // Dome commands
     int syncDome(double dAz, double dEl);
@@ -73,6 +75,8 @@ protected:
     int             enableSensors(void);
     
     LoggerInterface *mLogger;
+    SleeperInterface    *mSleeper;
+    
     bool            bDebugLog;
 
     bool            bIsConnected;
