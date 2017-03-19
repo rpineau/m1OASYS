@@ -247,7 +247,7 @@ int Cm1OASYS::getShutterState(int &state)
     if(err)
         return err;
     // wait for a proper response
-    
+    /*
     while(!strstr(resp,"open") || !strstr(resp,"open") || !strstr(resp,"unknown")) {
         if(timeout>50) {
             err = COMMAND_FAILED;
@@ -258,7 +258,8 @@ int Cm1OASYS::getShutterState(int &state)
         timeout++;
     }
     
-    
+    */
+
     if(strstr(resp,"open")) {
         state = OPEN;
         mShutterOpened = true;
@@ -365,6 +366,7 @@ int Cm1OASYS::openShutter()
         return err;
     
     // check returned data to make sure the command was processed
+    /*
     while(!strstr(resp,"ATC001000D7")) {
         //we're waiting for the answer
         if(timeout>50) {
@@ -379,6 +381,7 @@ int Cm1OASYS::openShutter()
         mSleeper->sleep(100);
         timeout++;
     }
+     */
     return err;
 }
 
@@ -415,6 +418,7 @@ int Cm1OASYS::closeShutter()
         return err;
 
     // check returned data to make sure the command was processed
+    /*
     while(!strstr(resp,"ATC002000D6")) {
         //we're waiting for the answer
         if(timeout>50) {
@@ -429,7 +433,7 @@ int Cm1OASYS::closeShutter()
         mSleeper->sleep(100);
         timeout++;
     }
-
+     */
     return err;
 }
 
