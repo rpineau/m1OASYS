@@ -31,11 +31,6 @@ Cm1OASYS::Cm1OASYS()
     mShutterState = UNKNOWN;
 
     memset(mLogBuffer,0,ND_LOG_BUFFER_SIZE);
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Cm1OASYS] Starting log for version 1.3");
-        mLogger->out(mLogBuffer);
-    }
-
 }
 
 Cm1OASYS::~Cm1OASYS()
@@ -47,6 +42,11 @@ int Cm1OASYS::Connect(const char *szPort)
 {
     int err;
     
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Cm1OASYS] Starting log for version 1.3");
+        mLogger->out(mLogBuffer);
+    }
+
     if (bDebugLog) {
         snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Trying to connect to %s.", szPort);
         mLogger->out(mLogBuffer);
@@ -247,6 +247,7 @@ int Cm1OASYS::getShutterState(int &state)
     if(err)
         return err;
     // wait for a proper response
+    
     while(!strstr(resp,"open") || !strstr(resp,"open") || !strstr(resp,"unknown")) {
         if(timeout>50) {
             err = COMMAND_FAILED;
@@ -256,7 +257,8 @@ int Cm1OASYS::getShutterState(int &state)
         mSleeper->sleep(100);
         timeout++;
     }
-
+    
+    
     if(strstr(resp,"open")) {
         state = OPEN;
         mShutterOpened = true;
@@ -361,7 +363,7 @@ int Cm1OASYS::openShutter()
     err = domeCommand("09tn00100C4\r\n", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
-
+    
     // check returned data to make sure the command was processed
     while(!strstr(resp,"ATC001000D7")) {
         //we're waiting for the answer
