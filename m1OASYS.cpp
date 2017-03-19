@@ -31,6 +31,11 @@ Cm1OASYS::Cm1OASYS()
     mShutterState = UNKNOWN;
 
     memset(mLogBuffer,0,ND_LOG_BUFFER_SIZE);
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Cm1OASYS] Starting log for version 1.3");
+        mLogger->out(mLogBuffer);
+    }
+
 }
 
 Cm1OASYS::~Cm1OASYS()
@@ -254,10 +259,25 @@ int Cm1OASYS::getShutterState(int &state)
 
     if(strstr(resp,"open")) {
         state = OPEN;
+        mShutterOpened = true;
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::getShutterState] Shutter is opened");
+            mLogger->out(mLogBuffer);
+        }
     } else if (strstr(resp,"close")) {
         state = CLOSED;
+        mShutterOpened = false;
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::getShutterState] Shutter is closed");
+            mLogger->out(mLogBuffer);
+        }
     } else {
         state = UNKNOWN;
+        mShutterOpened = false;
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::getShutterState] Shutter state is unknown");
+            mLogger->out(mLogBuffer);
+        }
     }
     return err;
 }
@@ -338,11 +358,6 @@ int Cm1OASYS::openShutter()
         err = COMMAND_FAILED;
     }
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] Opening RoR.");
-        mLogger->out(mLogBuffer);
-    }
-
     err = domeCommand("09tn00100C4\r\n", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
@@ -393,11 +408,6 @@ int Cm1OASYS::closeShutter()
         err = COMMAND_FAILED;
     }
 
-
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] Closing RoR.");
-        mLogger->out(mLogBuffer);
-    }
     err = domeCommand("09tn00200C3\r\n", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
@@ -440,13 +450,23 @@ int Cm1OASYS::isOpenComplete(bool &complete)
     if(!bIsConnected)
         return NOT_CONNECTED;
 
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::isOpenComplete] Checking roof state");
+        mLogger->out(mLogBuffer);
+    }
+
     err = getShutterState(mShutterState);
     if(err)
         return ERR_CMDFAILED;
+
     if(mShutterState == OPEN){
         mShutterOpened = true;
         complete = true;
         mCurrentElPosition = 90.0;
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::isOpenComplete] Roof is opened");
+            mLogger->out(mLogBuffer);
+        }
     }
     else {
         mShutterOpened = false;
@@ -460,18 +480,27 @@ int Cm1OASYS::isOpenComplete(bool &complete)
 int Cm1OASYS::isCloseComplete(bool &complete)
 {
     int err = RoR_OK;
-    int state;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
 
-    err = getShutterState(state);
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::isCloseComplete] Checking roof state");
+        mLogger->out(mLogBuffer);
+    }
+
+    err = getShutterState(mShutterState);
     if(err)
         return ERR_CMDFAILED;
-    if(state == CLOSED){
+
+    if(mShutterState == CLOSED){
         mShutterOpened = false;
         complete = true;
         mCurrentElPosition = 0.0;
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::isOpenComplete] Roof is closed");
+            mLogger->out(mLogBuffer);
+        }
     }
     else {
         mShutterOpened = true;
