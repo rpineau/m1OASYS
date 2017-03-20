@@ -310,7 +310,7 @@ int X2Dome::dapiIsOpenComplete(bool* pbComplete)
 
     err = m1OASYS.isOpenComplete(*pbComplete);
     if(err) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiIsOpenComplete] ERROR while checking for opened status of th shutter");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiIsOpenComplete] ERROR while checking for opened status of the shutter");
         m_pLogger->out(mLogBuffer);
 
         return ERR_CMDFAILED;
@@ -331,7 +331,7 @@ int	X2Dome::dapiIsCloseComplete(bool* pbComplete)
 
     err = m1OASYS.isCloseComplete(*pbComplete);
     if(err) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiIsCloseComplete] ERROR while checking for closed status of th shutter");
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiIsCloseComplete] ERROR while checking for closed status of the shutter");
         m_pLogger->out(mLogBuffer);
 
         return ERR_CMDFAILED;

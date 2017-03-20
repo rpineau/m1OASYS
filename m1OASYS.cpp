@@ -579,11 +579,7 @@ int Cm1OASYS::abortCurrentCommand()
         snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::abortCurrentCommand] Sending abort command.");
         mLogger->out(mLogBuffer);
     }
-    err = enableSensors();
-    if(err) {
-        err = COMMAND_FAILED;
-    }
-    
+
     err = domeCommand("09tn00300C2\r\n", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
