@@ -89,7 +89,6 @@ protected:
 
     int             mShutterState;
     char            mLogBuffer[ND_LOG_BUFFER_SIZE];
-
 };
 
 #endif

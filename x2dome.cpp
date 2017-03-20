@@ -186,8 +186,11 @@ int X2Dome::dapiGotoAzEl(double dAz, double dEl)
 int X2Dome::dapiAbort(void)
 {
 
+    X2MutexLocker ml(GetMutex());
+
     if(!m_bLinked)
         return ERR_NOLINK;
+
     m1OASYS.abortCurrentCommand();
 	return SB_OK;
 }
