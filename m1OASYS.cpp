@@ -555,10 +555,57 @@ int Cm1OASYS::isFindHomeComplete(bool &complete)
 
 int Cm1OASYS::abortCurrentCommand()
 {
-    if(!bIsConnected)
-        return NOT_CONNECTED;
 
-    return RoR_OK;
+    // 09tn00300C2
+
+    int err = RoR_OK;
+    int timeout = 0;
+    char resp[SERIAL_BUFFER_SIZE];
+    
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::abortCurrentCommand]");
+        mLogger->out(mLogBuffer);
+    }
+    
+    if(!bIsConnected) {
+        if (bDebugLog) {
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::abortCurrentCommand] NOT CONNECTED !!!!");
+            mLogger->out(mLogBuffer);
+        }
+        return NOT_CONNECTED;
+    }
+    
+    if (bDebugLog) {
+        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::abortCurrentCommand] Sending abort command.");
+        mLogger->out(mLogBuffer);
+    }
+    err = enableSensors();
+    if(err) {
+        err = COMMAND_FAILED;
+    }
+    
+    err = domeCommand("09tn00300C2\r\n", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+    
+    // check returned data to make sure the command was processed
+    /*
+     while(!strstr(resp,"ATC002000D6")) {
+     //we're waiting for the answer
+     if(timeout>50) {
+     err = COMMAND_FAILED;
+     break;
+     }
+     err = readResponse(resp, SERIAL_BUFFER_SIZE);
+     if (bDebugLog) {
+     snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] response = %s", resp);
+     mLogger->out(mLogBuffer);
+     }
+     mSleeper->sleep(100);
+     timeout++;
+     }
+     */
+    return err;
 }
 
 #pragma mark - Getter / Setter
