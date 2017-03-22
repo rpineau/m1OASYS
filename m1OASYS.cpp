@@ -64,7 +64,6 @@ int Cm1OASYS::Connect(const char *szPort)
     if (bDebugLog) {
         snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Connected.");
         mLogger->out(mLogBuffer);
-
         snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Getting shutter state.");
         mLogger->out(mLogBuffer);
     }
@@ -119,10 +118,9 @@ int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
             return err;
         }
         if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[CRigelDome::readResponse] respBuffer = %s",respBuffer);
+            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::readResponse] respBuffer = %s",respBuffer);
             mLogger->out(mLogBuffer);
         }
-
         if (nBytesRead !=1) {// timeout
             err = RoR_BAD_CMD_RESPONSE;
             if (bDebugLog) {
@@ -247,18 +245,20 @@ int Cm1OASYS::getShutterState(int &state)
     if(err)
         return err;
     // wait for a proper response
-    /*
-    while(!strstr(resp,"open") || !strstr(resp,"open") || !strstr(resp,"unknown")) {
+    while(!strstr(resp,"open") && !strstr(resp,"closed") && !strstr(resp,"unknown")) {
         if(timeout>50) {
             err = COMMAND_FAILED;
             break;
         }
         err = readResponse(resp, SERIAL_BUFFER_SIZE);
+        if(err) {
+            err = COMMAND_FAILED;
+            break;
+        }
+        // usleep(100000);  // 100 ms
         mSleeper->sleep(100);
         timeout++;
     }
-    
-    */
 
     if(strstr(resp,"open")) {
         state = OPEN;
@@ -282,6 +282,7 @@ int Cm1OASYS::getShutterState(int &state)
             mLogger->out(mLogBuffer);
         }
     }
+
     return err;
 }
 
@@ -366,8 +367,8 @@ int Cm1OASYS::openShutter()
         return err;
     
     // check returned data to make sure the command was processed
-    /*
     while(!strstr(resp,"ATC001000D7")) {
+        
         //we're waiting for the answer
         if(timeout>50) {
             err = COMMAND_FAILED;
@@ -378,10 +379,10 @@ int Cm1OASYS::openShutter()
             snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] response = %s", resp);
             mLogger->out(mLogBuffer);
         }
+        // usleep(100000);
         mSleeper->sleep(100);
         timeout++;
     }
-     */
     return err;
 }
 
@@ -418,7 +419,6 @@ int Cm1OASYS::closeShutter()
         return err;
 
     // check returned data to make sure the command was processed
-    /*
     while(!strstr(resp,"ATC002000D6")) {
         //we're waiting for the answer
         if(timeout>50) {
@@ -430,10 +430,11 @@ int Cm1OASYS::closeShutter()
             snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] response = %s", resp);
             mLogger->out(mLogBuffer);
         }
+        //usleep(100000);
         mSleeper->sleep(100);
         timeout++;
     }
-     */
+
     return err;
 }
 
@@ -584,24 +585,6 @@ int Cm1OASYS::abortCurrentCommand()
     if(err)
         return err;
     
-    // check returned data to make sure the command was processed
-    /*
-     while(!strstr(resp,"ATC002000D6")) {
-     //we're waiting for the answer
-     if(timeout>50) {
-     err = COMMAND_FAILED;
-     break;
-     }
-     err = readResponse(resp, SERIAL_BUFFER_SIZE);
-     if (bDebugLog) {
-     snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] response = %s", resp);
-     mLogger->out(mLogBuffer);
-     }
-     mSleeper->sleep(100);
-     timeout++;
-     }
-     */
-
     return err;
 }
 

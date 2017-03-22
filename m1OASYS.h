@@ -14,7 +14,7 @@
 #include "../../licensedinterfaces/loggerinterface.h"
 #include "../../licensedinterfaces/sleeperinterface.h"
 
-#define SERIAL_BUFFER_SIZE 20
+#define SERIAL_BUFFER_SIZE 256
 #define MAX_TIMEOUT 5000
 #define ND_LOG_BUFFER_SIZE 256
 
