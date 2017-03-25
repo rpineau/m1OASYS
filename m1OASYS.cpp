@@ -17,7 +17,7 @@
 Cm1OASYS::Cm1OASYS()
 {
     // set some sane values
-    bDebugLog = true;
+    bDebugLog = false;
 
     pSerx = NULL;
     bIsConnected = false;
@@ -116,10 +116,6 @@ int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
                 mLogger->out(mLogBuffer);
             }
             return err;
-        }
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::readResponse] respBuffer = %s",respBuffer);
-            mLogger->out(mLogBuffer);
         }
         if (nBytesRead !=1) {// timeout
             err = RoR_BAD_CMD_RESPONSE;
@@ -560,7 +556,6 @@ int Cm1OASYS::abortCurrentCommand()
     // 09tn00300C2
 
     int err = RoR_OK;
-    int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
     
     if (bDebugLog) {
