@@ -121,7 +121,7 @@ void X2Dome::deviceInfoNameLong(BasicStringInterface& str) const
 
 void X2Dome::deviceInfoDetailedDescription(BasicStringInterface& str) const		
 {
-    str = " m1 OASYS system is an Observatory Automation/Security System";
+    str = "m1 OASYS system is an Observatory Automation/Security System";
 }
 
  void X2Dome::deviceInfoFirmwareVersion(BasicStringInterface& str)					
