@@ -5,7 +5,7 @@ CFLAGS = -fPIC -Wall -Wextra -O2 -g -DSB_LINUX_BUILD -I. -I./../../
 CPPFLAGS = -fPIC -Wall -Wextra -O2 -g -DSB_LINUX_BUILD -I. -I./../../
 LDFLAGS = -shared -lstdc++
 RM = rm -f
-TRIP = strip
+STRIP = strip
 TARGET_LIB = libm1OASYS.so
 
 SRCS = main.cpp m1OASYS.cpp x2dome.cpp
