@@ -128,7 +128,9 @@ int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
         totalBytesRead += nBytesRead;
     } while (*bufPtr++ != 0x0D && totalBytesRead < bufferLen );
 
-    *bufPtr = 0; //remove the \r
+    if(totalBytesRead)
+        *(bufPtr-1) = 0; //remove the \r
+
     return err;
 }
 
