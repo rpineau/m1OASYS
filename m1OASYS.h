@@ -48,10 +48,10 @@ public:
 
     int        Connect(const char *szPort);
     void        Disconnect(void);
-    bool        IsConnected(void) { return bIsConnected; }
+    bool        IsConnected(void) { return m_bIsConnected; }
 
-    void        SetSerxPointer(SerXInterface *p) { pSerx = p; }
-    void        setSleeper(SleeperInterface *pSleeper) { mSleeper = pSleeper; };
+    void        SetSerxPointer(SerXInterface *p) { m_pSerx = p; }
+    void        setSleeper(SleeperInterface *pSleeper) { m_pSleeper = pSleeper; };
 
     // Dome commands
     int syncDome(double dAz, double dEl);
@@ -77,8 +77,6 @@ public:
 
     int getCurrentShutterState();
 
-    void setDebugLog(bool enable);
-
 protected:
 
     int             readResponse(char *respBuffer, unsigned int bufferLen);
@@ -89,20 +87,17 @@ protected:
     int             domeCommand(const char *cmd, char *result, int resultMaxLen);
     int             enableSensors(void);
     
-    SleeperInterface    *mSleeper;
-    
-    bool            bDebugLog;
+	SleeperInterface    *m_pSleeper;
 
-    bool            bIsConnected;
-    bool            mShutterOpened;
+    bool            m_bIsConnected;
+    bool            m_bShutterOpened;
 
-    double          mCurrentAzPosition;
-    double          mCurrentElPosition;
+    double          m_dCurrentAzPosition;
+    double          m_dCurrentElPosition;
 
-    SerXInterface   *pSerx;
+    SerXInterface   *m_pSerx;
 
-    int             mShutterState;
-    char            mLogBuffer[ND_LOG_BUFFER_SIZE];
+    int             m_nShutterState;
 
 #ifdef M1_DEBUG
     std::string m_sLogfilePath;

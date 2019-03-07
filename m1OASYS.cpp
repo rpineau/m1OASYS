@@ -10,20 +10,16 @@
 Cm1OASYS::Cm1OASYS()
 {
     // set some sane values
-    bDebugLog = false;
-
-    pSerx = NULL;
-    bIsConnected = false;
+    m_pSerx = NULL;
+    m_bIsConnected = false;
 
 
-    mCurrentAzPosition = 0.0;
-    mCurrentElPosition = 0.0;
+    m_dCurrentAzPosition = 0.0;
+    m_dCurrentElPosition = 0.0;
 
 
-    mShutterOpened = false;
-    mShutterState = UNKNOWN;
-
-    memset(mLogBuffer,0,ND_LOG_BUFFER_SIZE);
+    m_bShutterOpened = false;
+    m_nShutterState = UNKNOWN;
 
 #ifdef M1_DEBUG
 #if defined(SB_WIN_BUILD)
@@ -78,12 +74,12 @@ int Cm1OASYS::Connect(const char *szPort)
 
 
     // 9600 8N1
-    if(pSerx->open(szPort, 9600, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1") == 0)
-        bIsConnected = true;
+    if(m_pSerx->open(szPort, 9600, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1") == 0)
+        m_bIsConnected = true;
     else
-        bIsConnected = false;
+        m_bIsConnected = false;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return ERR_COMMNOLINK;
 
 #if defined M1_DEBUG && M1_DEBUG >= 2
@@ -96,7 +92,7 @@ int Cm1OASYS::Connect(const char *szPort)
 
 
     // get the current shutter state just to check the connection, we don't care about the state for now.
-    nErr = getShutterState(mShutterState);
+    nErr = getShutterState(m_nShutterState);
     if(nErr) {
 #if defined M1_DEBUG && M1_DEBUG >= 2
         ltime = time(NULL);
@@ -105,7 +101,7 @@ int Cm1OASYS::Connect(const char *szPort)
         fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error getting roof state = %d.\n", timestamp, nErr);
         fflush(Logfile);
 #endif
-        bIsConnected = false;
+        m_bIsConnected = false;
         return ERR_COMMNOLINK;
     }
 
@@ -113,11 +109,11 @@ int Cm1OASYS::Connect(const char *szPort)
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [Cm1OASYS::Connect] Roof state = %d.\n", timestamp, mShutterState);
+    fprintf(Logfile, "[%s] [Cm1OASYS::Connect] Roof state = %d.\n", timestamp, m_nShutterState);
     fflush(Logfile);
 #endif
 
-    syncDome(mCurrentAzPosition,mCurrentElPosition);
+    syncDome(m_dCurrentAzPosition,m_dCurrentElPosition);
 
     return SB_OK;
 }
@@ -125,11 +121,11 @@ int Cm1OASYS::Connect(const char *szPort)
 
 void Cm1OASYS::Disconnect()
 {
-    if(bIsConnected) {
-        pSerx->purgeTxRx();
-        pSerx->close();
+    if(m_bIsConnected) {
+        m_pSerx->purgeTxRx();
+        m_pSerx->close();
     }
-    bIsConnected = false;
+    m_bIsConnected = false;
 }
 
 
@@ -144,7 +140,7 @@ int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
     bufPtr = respBuffer;
 
     do {
-        nErr = pSerx->readFile(bufPtr, 1, nBytesRead, MAX_TIMEOUT);
+        nErr = m_pSerx->readFile(bufPtr, 1, nBytesRead, MAX_TIMEOUT);
         if(nErr) {
 #if defined DDW_DEBUG && DDW_DEBUG >= 2
             ltime = time(NULL);
@@ -182,7 +178,7 @@ int Cm1OASYS::domeCommand(const char *cmd, char *result, int resultMaxLen)
     char resp[SERIAL_BUFFER_SIZE];
     unsigned long  nBytesWrite;
 
-    pSerx->purgeTxRx();
+    m_pSerx->purgeTxRx();
 #if defined M1_DEBUG && M1_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
@@ -191,8 +187,8 @@ int Cm1OASYS::domeCommand(const char *cmd, char *result, int resultMaxLen)
     fflush(Logfile);
 #endif
 
-    nErr = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
-    pSerx->flushTx();
+    nErr = m_pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
+    m_pSerx->flushTx();
     if(nErr)
         return nErr;
     nErr = readResponse(resp, SERIAL_BUFFER_SIZE);
@@ -220,7 +216,7 @@ int Cm1OASYS::enableSensors()
     int nErr = RoR_OK;
     char resp[SERIAL_BUFFER_SIZE];
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
 #if defined M1_DEBUG && M1_DEBUG >= 2
@@ -261,12 +257,12 @@ int Cm1OASYS::getDomeAz(double &domeAz)
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
 
     // convert Az string to double
-    domeAz = mCurrentAzPosition;
+    domeAz = m_dCurrentAzPosition;
     return nErr;
 }
 
@@ -274,17 +270,17 @@ int Cm1OASYS::getDomeEl(double &domeEl)
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
-    if(!mShutterOpened)
+    if(!m_bShutterOpened)
     {
         domeEl = 0.0;
         return nErr;
     }
 
     // convert El string to double
-    domeEl = mCurrentElPosition;
+    domeEl = m_dCurrentElPosition;
 
     return nErr;
 }
@@ -296,7 +292,7 @@ int Cm1OASYS::getShutterState(int &state)
     int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
 #if defined M1_DEBUG && M1_DEBUG >= 2
@@ -325,13 +321,13 @@ int Cm1OASYS::getShutterState(int &state)
             break;
         }
         nErr = readResponse(resp, SERIAL_BUFFER_SIZE);
-        mSleeper->sleep(100);
+        m_pSleeper->sleep(100);
         timeout++;
     }
 
     if(strstr(resp,"open")) {
         state = OPEN;
-        mShutterOpened = true;
+        m_bShutterOpened = true;
 #if defined M1_DEBUG && M1_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
@@ -341,7 +337,7 @@ int Cm1OASYS::getShutterState(int &state)
 #endif
     } else if (strstr(resp,"close")) {
         state = CLOSED;
-        mShutterOpened = false;
+        m_bShutterOpened = false;
 #if defined M1_DEBUG && M1_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
@@ -351,7 +347,7 @@ int Cm1OASYS::getShutterState(int &state)
 #endif
     } else {
         state = UNKNOWN;
-        mShutterOpened = false;
+        m_bShutterOpened = false;
 #if defined M1_DEBUG && M1_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
@@ -365,20 +361,14 @@ int Cm1OASYS::getShutterState(int &state)
 }
 
 
-void Cm1OASYS::setDebugLog(bool enable)
-{
-    bDebugLog = enable;
-}
-
-
 int Cm1OASYS::syncDome(double dAz, double dEl)
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
-    mCurrentAzPosition = dAz;
+    m_dCurrentAzPosition = dAz;
     return nErr;
 }
 
@@ -386,7 +376,7 @@ int Cm1OASYS::parkDome()
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
     return nErr;
@@ -395,7 +385,7 @@ int Cm1OASYS::parkDome()
 
 int Cm1OASYS::unparkDome()
 {
-    syncDome(mCurrentAzPosition,mCurrentElPosition);
+    syncDome(m_dCurrentAzPosition,m_dCurrentElPosition);
     return 0;
 }
 
@@ -403,10 +393,10 @@ int Cm1OASYS::gotoAzimuth(double newAz)
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
-    mCurrentAzPosition = newAz;
+    m_dCurrentAzPosition = newAz;
 
     return nErr;
 }
@@ -426,7 +416,7 @@ int Cm1OASYS::openShutter()
 	fflush(Logfile);
 #endif
 
-	if(!bIsConnected) {
+	if(!m_bIsConnected) {
 #if defined M1_DEBUG && M1_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
@@ -462,7 +452,7 @@ int Cm1OASYS::openShutter()
             break;
         }
         nErr = readResponse(resp, SERIAL_BUFFER_SIZE);
-        mSleeper->sleep(100);
+        m_pSleeper->sleep(100);
         timeout++;
     }
     return nErr;
@@ -482,7 +472,7 @@ int Cm1OASYS::closeShutter()
 	fflush(Logfile);
 #endif
 
-    if(!bIsConnected) {
+    if(!m_bIsConnected) {
 #if defined M1_DEBUG && M1_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
@@ -517,7 +507,7 @@ int Cm1OASYS::closeShutter()
             break;
         }
         nErr = readResponse(resp, SERIAL_BUFFER_SIZE);
-        mSleeper->sleep(100);
+        m_pSleeper->sleep(100);
         timeout++;
     }
 
@@ -529,7 +519,7 @@ int Cm1OASYS::isGoToComplete(bool &complete)
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
     complete = true;
 
@@ -540,7 +530,7 @@ int Cm1OASYS::isOpenComplete(bool &complete)
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
 #if defined M1_DEBUG && M1_DEBUG >= 2
@@ -551,14 +541,14 @@ int Cm1OASYS::isOpenComplete(bool &complete)
 	fflush(Logfile);
 #endif
 
-    nErr = getShutterState(mShutterState);
+    nErr = getShutterState(m_nShutterState);
     if(nErr)
         return ERR_CMDFAILED;
 
-    if(mShutterState == OPEN){
-        mShutterOpened = true;
+    if(m_nShutterState == OPEN){
+        m_bShutterOpened = true;
         complete = true;
-        mCurrentElPosition = 90.0;
+        m_dCurrentElPosition = 90.0;
 #if defined M1_DEBUG && M1_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
@@ -568,9 +558,9 @@ int Cm1OASYS::isOpenComplete(bool &complete)
 #endif
     }
     else {
-        mShutterOpened = false;
+        m_bShutterOpened = false;
         complete = false;
-        mCurrentElPosition = 0.0;
+        m_dCurrentElPosition = 0.0;
     }
 
     return nErr;
@@ -580,7 +570,7 @@ int Cm1OASYS::isCloseComplete(bool &complete)
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
 #if defined M1_DEBUG && M1_DEBUG >= 2
@@ -590,14 +580,14 @@ int Cm1OASYS::isCloseComplete(bool &complete)
 	fprintf(Logfile, "[%s] [Cm1OASYS::isCloseComplete] Checking roof state\n", timestamp);
 	fflush(Logfile);
 #endif
-    nErr = getShutterState(mShutterState);
+    nErr = getShutterState(m_nShutterState);
     if(nErr)
         return ERR_CMDFAILED;
 
-    if(mShutterState == CLOSED){
-        mShutterOpened = false;
+    if(m_nShutterState == CLOSED){
+        m_bShutterOpened = false;
         complete = true;
-        mCurrentElPosition = 0.0;
+        m_dCurrentElPosition = 0.0;
 #if defined M1_DEBUG && M1_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
@@ -607,9 +597,9 @@ int Cm1OASYS::isCloseComplete(bool &complete)
 #endif
     }
     else {
-        mShutterOpened = true;
+        m_bShutterOpened = true;
         complete = false;
-        mCurrentElPosition = 90.0;
+        m_dCurrentElPosition = 90.0;
     }
 
     return nErr;
@@ -620,7 +610,7 @@ int Cm1OASYS::isParkComplete(bool &complete)
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
     complete = true;
@@ -631,7 +621,7 @@ int Cm1OASYS::isUnparkComplete(bool &complete)
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
 
     complete = true;
@@ -643,7 +633,7 @@ int Cm1OASYS::isFindHomeComplete(bool &complete)
 {
     int nErr = RoR_OK;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return NOT_CONNECTED;
     complete = true;
 
@@ -666,7 +656,7 @@ int Cm1OASYS::abortCurrentCommand()
 	fprintf(Logfile, "[%s] [Cm1OASYS::abortCurrentCommand]\n", timestamp);
 	fflush(Logfile);
 #endif
-    if(!bIsConnected) {
+    if(!m_bIsConnected) {
 #if defined M1_DEBUG && M1_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
@@ -696,25 +686,25 @@ int Cm1OASYS::abortCurrentCommand()
 
 double Cm1OASYS::getCurrentAz()
 {
-    if(bIsConnected)
-        getDomeAz(mCurrentAzPosition);
+    if(m_bIsConnected)
+        getDomeAz(m_dCurrentAzPosition);
 
-    return mCurrentAzPosition;
+    return m_dCurrentAzPosition;
 }
 
 double Cm1OASYS::getCurrentEl()
 {
-    if(bIsConnected)
-        getDomeEl(mCurrentElPosition);
+    if(m_bIsConnected)
+        getDomeEl(m_dCurrentElPosition);
 
-    return mCurrentElPosition;
+    return m_dCurrentElPosition;
 }
 
 int Cm1OASYS::getCurrentShutterState()
 {
-    if(bIsConnected)
-        getShutterState(mShutterState);
+    if(m_bIsConnected)
+        getShutterState(m_nShutterState);
 
-    return mShutterState;
+    return m_nShutterState;
 }
 

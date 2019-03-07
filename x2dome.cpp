@@ -201,8 +201,6 @@ int X2Dome::dapiOpen(void)
     X2MutexLocker ml(GetMutex());
 
     if(!m_bLinked) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiOpen] NOT CONNECTED");
-        m_pLogger->out(mLogBuffer);
         return ERR_NOLINK;
     }
 
@@ -219,8 +217,6 @@ int X2Dome::dapiClose(void)
     X2MutexLocker ml(GetMutex());
 
     if(!m_bLinked) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[X2Dome::dapiClose] NOT CONNECTED");
-        m_pLogger->out(mLogBuffer);
         return ERR_NOLINK;
     }
 

@@ -143,5 +143,4 @@ private:
 	int         m_nPrivateISIndex;
 	bool        m_bLinked;
     Cm1OASYS    m1OASYS;
-    char        mLogBuffer[LOG_BUFFER_SIZE];
 };
