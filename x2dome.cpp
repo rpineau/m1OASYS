@@ -36,7 +36,6 @@ X2Dome::X2Dome(const char* pszSelection,
 
 	m_bLinked = false;
     m1OASYS.SetSerxPointer(pSerX);
-    m1OASYS.setLogger(pLogger);
     m1OASYS.setSleeper(pSleeper);
 }
 

@@ -321,11 +321,25 @@ int Cm1OASYS::getShutterState(int &state)
     // wait for a proper response
     while(!strstr(resp,"open") && !strstr(resp,"closed") && !strstr(resp,"unknown")) {
         if(timeout>50) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+			ltime = time(NULL);
+			timestamp = asctime(localtime(&ltime));
+			timestamp[strlen(timestamp) - 1] = 0;
+			fprintf(Logfile, "[%s] [Cm1OASYS::getShutterState] Timeout !\n", timestamp);
+			fflush(Logfile);
+#endif
             err = COMMAND_FAILED;
             break;
         }
         err = readResponse(resp, SERIAL_BUFFER_SIZE);
         if(err) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+			ltime = time(NULL);
+			timestamp = asctime(localtime(&ltime));
+			timestamp[strlen(timestamp) - 1] = 0;
+			fprintf(Logfile, "[%s] [Cm1OASYS::getShutterState] error getting response = %d\n", timestamp, err);
+			fflush(Logfile);
+#endif
             err = COMMAND_FAILED;
             break;
         }
@@ -337,24 +351,33 @@ int Cm1OASYS::getShutterState(int &state)
     if(strstr(resp,"open")) {
         state = OPEN;
         mShutterOpened = true;
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::getShutterState] Shutter is opened");
-            mLogger->out(mLogBuffer);
-        }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::getShutterState] Roof is opened\n", timestamp);
+		fflush(Logfile);
+#endif
     } else if (strstr(resp,"close")) {
         state = CLOSED;
         mShutterOpened = false;
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::getShutterState] Shutter is closed");
-            mLogger->out(mLogBuffer);
-        }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::getShutterState] Roof is closed\n", timestamp);
+		fflush(Logfile);
+#endif
     } else {
         state = UNKNOWN;
         mShutterOpened = false;
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::getShutterState] Shutter state is unknown");
-            mLogger->out(mLogBuffer);
-        }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::getShutterState] Roof state is unknown\n", timestamp);
+		fflush(Logfile);
+#endif
     }
 
     return err;
@@ -414,23 +437,25 @@ int Cm1OASYS::openShutter()
     
     char resp[SERIAL_BUFFER_SIZE];
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter]");
-        mLogger->out(mLogBuffer);
+#if defined M1_DEBUG && M1_DEBUG >= 2
+	ltime = time(NULL);
+	timestamp = asctime(localtime(&ltime));
+	timestamp[strlen(timestamp) - 1] = 0;
+	fprintf(Logfile, "[%s] [Cm1OASYS::openShutter]\n", timestamp);
+	fflush(Logfile);
+#endif
+
+	if(!bIsConnected) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::openShutter] Not Connected !\n", timestamp);
+		fflush(Logfile);
+#endif
+    return NOT_CONNECTED;
     }
 
-    if(!bIsConnected) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] NOT CONNECTED !!!!");
-            mLogger->out(mLogBuffer);
-        }
-        return NOT_CONNECTED;
-    }
-
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] Sending sensor on.");
-        mLogger->out(mLogBuffer);
-    }
     err = enableSensors();
     if(err) {
         err = COMMAND_FAILED;
@@ -445,15 +470,24 @@ int Cm1OASYS::openShutter()
         
         //we're waiting for the answer
         if(timeout>50) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+			ltime = time(NULL);
+			timestamp = asctime(localtime(&ltime));
+			timestamp[strlen(timestamp) - 1] = 0;
+			fprintf(Logfile, "[%s] [Cm1OASYS::openShutter] Timeout !\n", timestamp);
+			fflush(Logfile);
+#endif
             err = COMMAND_FAILED;
             break;
         }
         err = readResponse(resp, SERIAL_BUFFER_SIZE);
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::openShutter] response = %s", resp);
-            mLogger->out(mLogBuffer);
-        }
-        // usleep(100000);
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::openShutter] response = %s\n", timestamp, resp);
+		fflush(Logfile);
+#endif
         mSleeper->sleep(100);
         timeout++;
     }
@@ -466,23 +500,25 @@ int Cm1OASYS::closeShutter()
     int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter]");
-        mLogger->out(mLogBuffer);
-    }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+	ltime = time(NULL);
+	timestamp = asctime(localtime(&ltime));
+	timestamp[strlen(timestamp) - 1] = 0;
+	fprintf(Logfile, "[%s] [Cm1OASYS::closeShutter]\n", timestamp);
+	fflush(Logfile);
+#endif
 
     if(!bIsConnected) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] NOT CONNECTED !!!!");
-            mLogger->out(mLogBuffer);
-        }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::closeShutter] Not Connected !\n", timestamp);
+		fflush(Logfile);
+#endif
         return NOT_CONNECTED;
     }
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] Sending sensor on.");
-        mLogger->out(mLogBuffer);
-    }
     err = enableSensors();
     if(err) {
         err = COMMAND_FAILED;
@@ -496,15 +532,24 @@ int Cm1OASYS::closeShutter()
     while(!strstr(resp,"ATC002000D6")) {
         //we're waiting for the answer
         if(timeout>50) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+			ltime = time(NULL);
+			timestamp = asctime(localtime(&ltime));
+			timestamp[strlen(timestamp) - 1] = 0;
+			fprintf(Logfile, "[%s] [Cm1OASYS::closeShutter] Timeout !\n", timestamp);
+			fflush(Logfile);
+#endif
             err = COMMAND_FAILED;
             break;
         }
         err = readResponse(resp, SERIAL_BUFFER_SIZE);
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::closeShutter] response = %s", resp);
-            mLogger->out(mLogBuffer);
-        }
-        //usleep(100000);
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::closeShutter] response = %s\n", timestamp, resp);
+		fflush(Logfile);
+#endif
         mSleeper->sleep(100);
         timeout++;
     }
@@ -531,10 +576,13 @@ int Cm1OASYS::isOpenComplete(bool &complete)
     if(!bIsConnected)
         return NOT_CONNECTED;
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::isOpenComplete] Checking roof state");
-        mLogger->out(mLogBuffer);
-    }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+	ltime = time(NULL);
+	timestamp = asctime(localtime(&ltime));
+	timestamp[strlen(timestamp) - 1] = 0;
+	fprintf(Logfile, "[%s] [Cm1OASYS::isOpenComplete] Checking roof state\n", timestamp);
+	fflush(Logfile);
+#endif
 
     err = getShutterState(mShutterState);
     if(err)
@@ -544,10 +592,13 @@ int Cm1OASYS::isOpenComplete(bool &complete)
         mShutterOpened = true;
         complete = true;
         mCurrentElPosition = 90.0;
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::isOpenComplete] Roof is opened");
-            mLogger->out(mLogBuffer);
-        }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::isOpenComplete] Roof is opened\n", timestamp);
+		fflush(Logfile);
+#endif
     }
     else {
         mShutterOpened = false;
@@ -565,11 +616,13 @@ int Cm1OASYS::isCloseComplete(bool &complete)
     if(!bIsConnected)
         return NOT_CONNECTED;
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::isCloseComplete] Checking roof state");
-        mLogger->out(mLogBuffer);
-    }
-
+#if defined M1_DEBUG && M1_DEBUG >= 2
+	ltime = time(NULL);
+	timestamp = asctime(localtime(&ltime));
+	timestamp[strlen(timestamp) - 1] = 0;
+	fprintf(Logfile, "[%s] [Cm1OASYS::isCloseComplete] Checking roof state\n", timestamp);
+	fflush(Logfile);
+#endif
     err = getShutterState(mShutterState);
     if(err)
         return ERR_CMDFAILED;
@@ -578,10 +631,13 @@ int Cm1OASYS::isCloseComplete(bool &complete)
         mShutterOpened = false;
         complete = true;
         mCurrentElPosition = 0.0;
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::isOpenComplete] Roof is closed");
-            mLogger->out(mLogBuffer);
-        }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::isCloseComplete] Roof is closed\n", timestamp);
+		fflush(Logfile);
+#endif
     }
     else {
         mShutterOpened = true;
@@ -636,24 +692,31 @@ int Cm1OASYS::abortCurrentCommand()
     int err = RoR_OK;
     char resp[SERIAL_BUFFER_SIZE];
     
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::abortCurrentCommand]");
-        mLogger->out(mLogBuffer);
-    }
-    
+#if defined M1_DEBUG && M1_DEBUG >= 2
+	ltime = time(NULL);
+	timestamp = asctime(localtime(&ltime));
+	timestamp[strlen(timestamp) - 1] = 0;
+	fprintf(Logfile, "[%s] [Cm1OASYS::abortCurrentCommand]\n", timestamp);
+	fflush(Logfile);
+#endif
     if(!bIsConnected) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::abortCurrentCommand] NOT CONNECTED !!!!");
-            mLogger->out(mLogBuffer);
-        }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::abortCurrentCommand] NOT CONNECTED.\n", timestamp);
+		fflush(Logfile);
+#endif
         return NOT_CONNECTED;
     }
     
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::abortCurrentCommand] Sending abort command.");
-        mLogger->out(mLogBuffer);
-    }
-
+#if defined M1_DEBUG && M1_DEBUG >= 2
+	ltime = time(NULL);
+	timestamp = asctime(localtime(&ltime));
+	timestamp[strlen(timestamp) - 1] = 0;
+	fprintf(Logfile, "[%s] [Cm1OASYS::abortCurrentCommand] Sending abort command\n", timestamp);
+	fflush(Logfile);
+#endif
     err = domeCommand("09tn00300C2\r\n", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;

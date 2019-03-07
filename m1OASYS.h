@@ -40,7 +40,6 @@ public:
     bool        IsConnected(void) { return bIsConnected; }
 
     void        SetSerxPointer(SerXInterface *p) { pSerx = p; }
-    void        setLogger(LoggerInterface *pLogger) { mLogger = pLogger; };
     void        setSleeper(SleeperInterface *pSleeper) { mSleeper = pSleeper; };
 
     // Dome commands
@@ -79,7 +78,6 @@ protected:
     int             domeCommand(const char *cmd, char *result, int resultMaxLen);
     int             enableSensors(void);
     
-    LoggerInterface *mLogger;
     SleeperInterface    *mSleeper;
     
     bool            bDebugLog;
