@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include "../../licensedinterfaces/basicstringinterface.h"
 #include "main.h"
-#include "x2dome.h"
 
 
 #define PLUGIN_NAME "X2Dome m1OASYS"

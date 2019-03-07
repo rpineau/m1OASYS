@@ -6,13 +6,6 @@
 //  m1OASYS X2 plugin
 
 #include "m1OASYS.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <memory.h>
-#ifdef SB_MAC_BUILD
-#include <unistd.h>
-#endif
 
 Cm1OASYS::Cm1OASYS()
 {
@@ -72,7 +65,7 @@ Cm1OASYS::~Cm1OASYS()
 
 int Cm1OASYS::Connect(const char *szPort)
 {
-    int err;
+    int nErr = SB_OK;
 
 #if defined M1_DEBUG && M1_DEBUG >= 2
     ltime = time(NULL);
@@ -103,13 +96,13 @@ int Cm1OASYS::Connect(const char *szPort)
 
 
     // get the current shutter state just to check the connection, we don't care about the state for now.
-    err = getShutterState(mShutterState);
-    if(err) {
+    nErr = getShutterState(mShutterState);
+    if(nErr) {
 #if defined M1_DEBUG && M1_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error getting roof state = %d.\n", timestamp, err);
+        fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error getting roof state = %d.\n", timestamp, nErr);
         fflush(Logfile);
 #endif
         bIsConnected = false;
@@ -185,7 +178,7 @@ int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
 
 int Cm1OASYS::domeCommand(const char *cmd, char *result, int resultMaxLen)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
     char resp[SERIAL_BUFFER_SIZE];
     unsigned long  nBytesWrite;
 
@@ -198,13 +191,13 @@ int Cm1OASYS::domeCommand(const char *cmd, char *result, int resultMaxLen)
     fflush(Logfile);
 #endif
 
-    err = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
+    nErr = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
     pSerx->flushTx();
-    if(err)
-        return err;
-    err = readResponse(resp, SERIAL_BUFFER_SIZE);
-    if(err) {
-        return err;
+    if(nErr)
+        return nErr;
+    nErr = readResponse(resp, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+        return nErr;
     }
 #if defined M1_DEBUG && M1_DEBUG >= 2
     ltime = time(NULL);
@@ -217,14 +210,14 @@ int Cm1OASYS::domeCommand(const char *cmd, char *result, int resultMaxLen)
     if(result)
         strncpy(result, &resp[1], resultMaxLen);
 
-    return err;
+    return nErr;
 
 }
 
 int Cm1OASYS::enableSensors()
 {
     //11xx005sensoron0042
-    int err = RoR_OK;
+    int nErr = RoR_OK;
     char resp[SERIAL_BUFFER_SIZE];
 
     if(!bIsConnected)
@@ -238,16 +231,16 @@ int Cm1OASYS::enableSensors()
     fflush(Logfile);
 #endif
 
-    err = domeCommand("11xx005sensoron0042\r\n", resp,  SERIAL_BUFFER_SIZE);
-    if(err) {
+    nErr = domeCommand("11xx005sensoron0042\r\n", resp,  SERIAL_BUFFER_SIZE);
+    if(nErr) {
 #if defined M1_DEBUG && M1_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error enabling sensors = %d.\n", timestamp, err);
+        fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error enabling sensors = %d.\n", timestamp, nErr);
         fflush(Logfile);
 #endif
-        return err;
+        return nErr;
     }
     // check for Secure
     if(!strstr(resp,"ecure")) {
@@ -258,15 +251,15 @@ int Cm1OASYS::enableSensors()
         fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error enabling sensors = %s.\n", timestamp, resp);
         fflush(Logfile);
 #endif
-        err = COMMAND_FAILED;
+        nErr = COMMAND_FAILED;
     }
 
-    return err;
+    return nErr;
 }
 
 int Cm1OASYS::getDomeAz(double &domeAz)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
@@ -274,12 +267,12 @@ int Cm1OASYS::getDomeAz(double &domeAz)
 
     // convert Az string to double
     domeAz = mCurrentAzPosition;
-    return err;
+    return nErr;
 }
 
 int Cm1OASYS::getDomeEl(double &domeEl)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
@@ -287,19 +280,19 @@ int Cm1OASYS::getDomeEl(double &domeEl)
     if(!mShutterOpened)
     {
         domeEl = 0.0;
-        return err;
+        return nErr;
     }
 
     // convert El string to double
     domeEl = mCurrentElPosition;
 
-    return err;
+    return nErr;
 }
 
 
 int Cm1OASYS::getShutterState(int &state)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
     int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
@@ -315,9 +308,9 @@ int Cm1OASYS::getShutterState(int &state)
 #endif
 
 
-    err = domeCommand("09xx00100B6\r\n", resp,  SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = domeCommand("09xx00100B6\r\n", resp,  SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
     // wait for a proper response
     while(!strstr(resp,"open") && !strstr(resp,"closed") && !strstr(resp,"unknown")) {
         if(timeout>50) {
@@ -328,22 +321,10 @@ int Cm1OASYS::getShutterState(int &state)
 			fprintf(Logfile, "[%s] [Cm1OASYS::getShutterState] Timeout !\n", timestamp);
 			fflush(Logfile);
 #endif
-            err = COMMAND_FAILED;
+            nErr = COMMAND_FAILED;
             break;
         }
-        err = readResponse(resp, SERIAL_BUFFER_SIZE);
-        if(err) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
-			ltime = time(NULL);
-			timestamp = asctime(localtime(&ltime));
-			timestamp[strlen(timestamp) - 1] = 0;
-			fprintf(Logfile, "[%s] [Cm1OASYS::getShutterState] error getting response = %d\n", timestamp, err);
-			fflush(Logfile);
-#endif
-            err = COMMAND_FAILED;
-            break;
-        }
-        // usleep(100000);  // 100 ms
+        nErr = readResponse(resp, SERIAL_BUFFER_SIZE);
         mSleeper->sleep(100);
         timeout++;
     }
@@ -380,7 +361,7 @@ int Cm1OASYS::getShutterState(int &state)
 #endif
     }
 
-    return err;
+    return nErr;
 }
 
 
@@ -392,23 +373,23 @@ void Cm1OASYS::setDebugLog(bool enable)
 
 int Cm1OASYS::syncDome(double dAz, double dEl)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
 
     mCurrentAzPosition = dAz;
-    return err;
+    return nErr;
 }
 
 int Cm1OASYS::parkDome()
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
 
-    return err;
+    return nErr;
 
 }
 
@@ -420,19 +401,19 @@ int Cm1OASYS::unparkDome()
 
 int Cm1OASYS::gotoAzimuth(double newAz)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
 
     mCurrentAzPosition = newAz;
 
-    return err;
+    return nErr;
 }
 
 int Cm1OASYS::openShutter()
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
     int timeout = 0;
     
     char resp[SERIAL_BUFFER_SIZE];
@@ -456,14 +437,14 @@ int Cm1OASYS::openShutter()
     return NOT_CONNECTED;
     }
 
-    err = enableSensors();
-    if(err) {
-        err = COMMAND_FAILED;
+    nErr = enableSensors();
+    if(nErr) {
+        return COMMAND_FAILED;
     }
 
-    err = domeCommand("09tn00100C4\r\n", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = domeCommand("09tn00100C4\r\n", resp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
     
     // check returned data to make sure the command was processed
     while(!strstr(resp,"ATC001000D7")) {
@@ -477,26 +458,19 @@ int Cm1OASYS::openShutter()
 			fprintf(Logfile, "[%s] [Cm1OASYS::openShutter] Timeout !\n", timestamp);
 			fflush(Logfile);
 #endif
-            err = COMMAND_FAILED;
+            nErr = COMMAND_FAILED;
             break;
         }
-        err = readResponse(resp, SERIAL_BUFFER_SIZE);
-#if defined M1_DEBUG && M1_DEBUG >= 2
-		ltime = time(NULL);
-		timestamp = asctime(localtime(&ltime));
-		timestamp[strlen(timestamp) - 1] = 0;
-		fprintf(Logfile, "[%s] [Cm1OASYS::openShutter] response = %s\n", timestamp, resp);
-		fflush(Logfile);
-#endif
+        nErr = readResponse(resp, SERIAL_BUFFER_SIZE);
         mSleeper->sleep(100);
         timeout++;
     }
-    return err;
+    return nErr;
 }
 
 int Cm1OASYS::closeShutter()
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
     int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
@@ -519,14 +493,14 @@ int Cm1OASYS::closeShutter()
         return NOT_CONNECTED;
     }
 
-    err = enableSensors();
-    if(err) {
-        err = COMMAND_FAILED;
+    nErr = enableSensors();
+    if(nErr) {
+        return COMMAND_FAILED;
     }
 
-    err = domeCommand("09tn00200C3\r\n", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = domeCommand("09tn00200C3\r\n", resp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
 
     // check returned data to make sure the command was processed
     while(!strstr(resp,"ATC002000D6")) {
@@ -539,39 +513,32 @@ int Cm1OASYS::closeShutter()
 			fprintf(Logfile, "[%s] [Cm1OASYS::closeShutter] Timeout !\n", timestamp);
 			fflush(Logfile);
 #endif
-            err = COMMAND_FAILED;
+            nErr = COMMAND_FAILED;
             break;
         }
-        err = readResponse(resp, SERIAL_BUFFER_SIZE);
-#if defined M1_DEBUG && M1_DEBUG >= 2
-		ltime = time(NULL);
-		timestamp = asctime(localtime(&ltime));
-		timestamp[strlen(timestamp) - 1] = 0;
-		fprintf(Logfile, "[%s] [Cm1OASYS::closeShutter] response = %s\n", timestamp, resp);
-		fflush(Logfile);
-#endif
+        nErr = readResponse(resp, SERIAL_BUFFER_SIZE);
         mSleeper->sleep(100);
         timeout++;
     }
 
-    return err;
+    return nErr;
 }
 
 
 int Cm1OASYS::isGoToComplete(bool &complete)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
     complete = true;
 
-    return err;
+    return nErr;
 }
 
 int Cm1OASYS::isOpenComplete(bool &complete)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
@@ -584,8 +551,8 @@ int Cm1OASYS::isOpenComplete(bool &complete)
 	fflush(Logfile);
 #endif
 
-    err = getShutterState(mShutterState);
-    if(err)
+    nErr = getShutterState(mShutterState);
+    if(nErr)
         return ERR_CMDFAILED;
 
     if(mShutterState == OPEN){
@@ -606,12 +573,12 @@ int Cm1OASYS::isOpenComplete(bool &complete)
         mCurrentElPosition = 0.0;
     }
 
-    return err;
+    return nErr;
 }
 
 int Cm1OASYS::isCloseComplete(bool &complete)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
@@ -623,8 +590,8 @@ int Cm1OASYS::isCloseComplete(bool &complete)
 	fprintf(Logfile, "[%s] [Cm1OASYS::isCloseComplete] Checking roof state\n", timestamp);
 	fflush(Logfile);
 #endif
-    err = getShutterState(mShutterState);
-    if(err)
+    nErr = getShutterState(mShutterState);
+    if(nErr)
         return ERR_CMDFAILED;
 
     if(mShutterState == CLOSED){
@@ -645,42 +612,42 @@ int Cm1OASYS::isCloseComplete(bool &complete)
         mCurrentElPosition = 90.0;
     }
 
-    return err;
+    return nErr;
 }
 
 
 int Cm1OASYS::isParkComplete(bool &complete)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
 
     complete = true;
-    return err;
+    return nErr;
 }
 
 int Cm1OASYS::isUnparkComplete(bool &complete)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
 
     complete = true;
 
-    return err;
+    return nErr;
 }
 
 int Cm1OASYS::isFindHomeComplete(bool &complete)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
 
     if(!bIsConnected)
         return NOT_CONNECTED;
     complete = true;
 
-    return err;
+    return nErr;
 
 }
 
@@ -689,7 +656,7 @@ int Cm1OASYS::abortCurrentCommand()
 
     // 09tn00300C2
 
-    int err = RoR_OK;
+    int nErr = RoR_OK;
     char resp[SERIAL_BUFFER_SIZE];
     
 #if defined M1_DEBUG && M1_DEBUG >= 2
@@ -717,11 +684,11 @@ int Cm1OASYS::abortCurrentCommand()
 	fprintf(Logfile, "[%s] [Cm1OASYS::abortCurrentCommand] Sending abort command\n", timestamp);
 	fflush(Logfile);
 #endif
-    err = domeCommand("09tn00300C2\r\n", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = domeCommand("09tn00300C2\r\n", resp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
     
-    return err;
+    return nErr;
 }
 
 #pragma mark - Getter / Setter

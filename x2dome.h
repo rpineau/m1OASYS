@@ -1,8 +1,12 @@
-#include "m1OASYS.h"
+#include <stdio.h>
+#include <string.h>
+#include "../../licensedinterfaces/basicstringinterface.h"
 #include "../../licensedinterfaces/domedriverinterface.h"
 #include "../../licensedinterfaces/serialportparams2interface.h"
 #include "../../licensedinterfaces/modalsettingsdialoginterface.h"
 #include "../../licensedinterfaces/x2guiinterface.h"
+
+#include "m1OASYS.h"
 
 
 class SerXInterface;		

@@ -9,6 +9,17 @@
 #define __m1_OASYS__
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <memory.h>
+#ifdef SB_MAC_BUILD
+#include <unistd.h>
+#endif
+
+#ifdef SB_WIN_BUILD
+#include <time.h>
+#endif
 
 #include <string>
 
