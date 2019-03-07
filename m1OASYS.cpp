@@ -31,26 +31,58 @@ Cm1OASYS::Cm1OASYS()
     mShutterState = UNKNOWN;
 
     memset(mLogBuffer,0,ND_LOG_BUFFER_SIZE);
+
+#ifdef M1_DEBUG
+#if defined(SB_WIN_BUILD)
+    m_sLogfilePath = getenv("HOMEDRIVE");
+    m_sLogfilePath += getenv("HOMEPATH");
+    m_sLogfilePath += "\\m1OASYSLog.txt";
+#elif defined(SB_LINUX_BUILD)
+    m_sLogfilePath = getenv("HOME");
+    m_sLogfilePath += "/m1OASYSLog.txt";
+#elif defined(SB_MAC_BUILD)
+    m_sLogfilePath = getenv("HOME");
+    m_sLogfilePath += "/m1OASYSLog.txt";
+#endif
+    Logfile = fopen(m_sLogfilePath.c_str(), "w");
+#endif
+
+#if defined M1_DEBUG && M1_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS] New Constructor Called\n", timestamp);
+    fflush(Logfile);
+#endif
+
+
 }
 
 Cm1OASYS::~Cm1OASYS()
 {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [~Cm1OASYS] Destructor Called\n", timestamp );
+    fflush(Logfile);
+#endif
 
 }
 
 int Cm1OASYS::Connect(const char *szPort)
 {
     int err;
-    
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Cm1OASYS] Starting log for version 1.3");
-        mLogger->out(mLogBuffer);
-    }
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Trying to connect to %s.", szPort);
-        mLogger->out(mLogBuffer);
-    }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS::Connect] Called with port %s\n", timestamp, szPort);
+    fflush(Logfile);
+#endif
+
+
 
     // 9600 8N1
     if(pSerx->open(szPort, 9600, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1") == 0)
@@ -61,26 +93,36 @@ int Cm1OASYS::Connect(const char *szPort)
     if(!bIsConnected)
         return ERR_COMMNOLINK;
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Connected.");
-        mLogger->out(mLogBuffer);
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] Getting shutter state.");
-        mLogger->out(mLogBuffer);
-    }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS::Connect] Getting roof state.\n", timestamp);
+    fflush(Logfile);
+#endif
+
 
     // get the current shutter state just to check the connection, we don't care about the state for now.
     err = getShutterState(mShutterState);
     if(err) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error getting roof state = %d.\n", timestamp, err);
+        fflush(Logfile);
+#endif
         bIsConnected = false;
         return ERR_COMMNOLINK;
     }
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] m1OASYS init done.");
-        mLogger->out(mLogBuffer);
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::Connect] bIsConnected = %u.", bIsConnected);
-        mLogger->out(mLogBuffer);
-    }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS::Connect] Roof state = %d.\n", timestamp, mShutterState);
+    fflush(Logfile);
+#endif
 
     syncDome(mCurrentAzPosition,mCurrentElPosition);
 
@@ -100,7 +142,7 @@ void Cm1OASYS::Disconnect()
 
 int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
 {
-    int err = RoR_OK;
+    int nErr = RoR_OK;
     unsigned long nBytesRead = 0;
     unsigned int totalBytesRead = 0;
     char *bufPtr;
@@ -109,20 +151,26 @@ int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
     bufPtr = respBuffer;
 
     do {
-        err = pSerx->readFile(bufPtr, 1, nBytesRead, MAX_TIMEOUT);
-        if(err) {
-            if (bDebugLog) {
-                snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::readResponse] readFile error.");
-                mLogger->out(mLogBuffer);
-            }
-            return err;
+        nErr = pSerx->readFile(bufPtr, 1, nBytesRead, MAX_TIMEOUT);
+        if(nErr) {
+#if defined DDW_DEBUG && DDW_DEBUG >= 2
+            ltime = time(NULL);
+            timestamp = asctime(localtime(&ltime));
+            timestamp[strlen(timestamp) - 1] = 0;
+            fprintf(Logfile, "[%s] [Cm1OASYS::readResponse] readFile error : %d\n", timestamp, nErr);
+            fflush(Logfile);
+#endif
+            return nErr;
         }
         if (nBytesRead !=1) {// timeout
-            err = RoR_BAD_CMD_RESPONSE;
-            if (bDebugLog) {
-                snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::readResponse] readFile Timeout while getting response.");
-                mLogger->out(mLogBuffer);
-            }
+            nErr = RoR_BAD_CMD_RESPONSE;
+#if defined DDW_DEBUG && DDW_DEBUG >= 2
+            ltime = time(NULL);
+            timestamp = asctime(localtime(&ltime));
+            timestamp[strlen(timestamp) - 1] = 0;
+            fprintf(Logfile, "[%s] [Cm1OASYS::readResponse] readFile Timeout while getting response.\n", timestamp);
+            fflush(Logfile);
+#endif
             break;
         }
         totalBytesRead += nBytesRead;
@@ -131,7 +179,7 @@ int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
     if(totalBytesRead)
         *(bufPtr-1) = 0; //remove the \r
 
-    return err;
+    return nErr;
 }
 
 
@@ -142,22 +190,29 @@ int Cm1OASYS::domeCommand(const char *cmd, char *result, int resultMaxLen)
     unsigned long  nBytesWrite;
 
     pSerx->purgeTxRx();
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::domeCommand] Sending %s",cmd);
-        mLogger->out(mLogBuffer);
-    }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS::domeCommand] Sending %s\n", timestamp, cmd);
+    fflush(Logfile);
+#endif
+
     err = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
     pSerx->flushTx();
     if(err)
         return err;
     err = readResponse(resp, SERIAL_BUFFER_SIZE);
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::domeCommand] response = %s", resp);
-        mLogger->out(mLogBuffer);
-    }
-
-    if(err)
+    if(err) {
         return err;
+    }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS::domeCommand] response  = %s\n", timestamp, resp);
+    fflush(Logfile);
+#endif
 
     if(result)
         strncpy(result, &resp[1], resultMaxLen);
@@ -175,17 +230,34 @@ int Cm1OASYS::enableSensors()
     if(!bIsConnected)
         return NOT_CONNECTED;
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::enableSensors] Sending sensor on.");
-        mLogger->out(mLogBuffer);
-    }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS::enableSensors] Sending sensor on.\n", timestamp);
+    fflush(Logfile);
+#endif
 
     err = domeCommand("11xx005sensoron0042\r\n", resp,  SERIAL_BUFFER_SIZE);
-    if(err)
+    if(err) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error enabling sensors = %d.\n", timestamp, err);
+        fflush(Logfile);
+#endif
         return err;
-
+    }
     // check for Secure
     if(!strstr(resp,"ecure")) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error enabling sensors = %s.\n", timestamp, resp);
+        fflush(Logfile);
+#endif
         err = COMMAND_FAILED;
     }
 
@@ -234,10 +306,14 @@ int Cm1OASYS::getShutterState(int &state)
     if(!bIsConnected)
         return NOT_CONNECTED;
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,ND_LOG_BUFFER_SIZE,"[Cm1OASYS::getShutterState]");
-        mLogger->out(mLogBuffer);
-    }
+#if defined M1_DEBUG && M1_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS::getShutterState]\n", timestamp);
+    fflush(Logfile);
+#endif
+
 
     err = domeCommand("09xx00100B6\r\n", resp,  SERIAL_BUFFER_SIZE);
     if(err)

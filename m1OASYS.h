@@ -9,15 +9,20 @@
 #define __m1_OASYS__
 #include <math.h>
 #include <string.h>
+
+#include <string>
+
 #include "../../licensedinterfaces/sberrorx.h"
 #include "../../licensedinterfaces/serxinterface.h"
 #include "../../licensedinterfaces/loggerinterface.h"
 #include "../../licensedinterfaces/sleeperinterface.h"
 
+
 #define SERIAL_BUFFER_SIZE 256
 #define MAX_TIMEOUT 5000
 #define ND_LOG_BUFFER_SIZE 256
 
+#define M1_DEBUG 2
 // error codes
 enum m1OASYSErrors {RoR_OK=0, NOT_CONNECTED, RoR_CANT_CONNECT, RoR_BAD_CMD_RESPONSE, COMMAND_FAILED};
 
@@ -89,6 +94,15 @@ protected:
 
     int             mShutterState;
     char            mLogBuffer[ND_LOG_BUFFER_SIZE];
+
+#ifdef M1_DEBUG
+    std::string m_sLogfilePath;
+    // timestamp for logs
+    char *timestamp;
+    time_t ltime;
+    FILE *Logfile;      // LogFile
+#endif
+
 };
 
 #endif
