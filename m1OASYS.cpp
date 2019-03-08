@@ -214,7 +214,6 @@ int Cm1OASYS::enableSensors()
 {
     //11xx005sensoron0042
     int nErr = RoR_OK;
-    int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
     if(!m_bIsConnected)
@@ -248,7 +247,25 @@ int Cm1OASYS::enableSensors()
     fflush(Logfile);
 #endif
 
-    m_pSleeper->sleep(1600);    // wait 1.6 seconds .. enabling sensors takes a long time and use to return a response but apparently not anymore
+    m_pSleeper->sleep(3000);    // wait 3 seconds .. enabling sensors takes a long time and use to return a response but apparently not anymore
+
+	nErr = domeCommand("0Bxx00200AC\r\n", resp,  SERIAL_BUFFER_SIZE);
+	if(nErr) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+		ltime = time(NULL);
+		timestamp = asctime(localtime(&ltime));
+		timestamp[strlen(timestamp) - 1] = 0;
+		fprintf(Logfile, "[%s] [Cm1OASYS::enableSensors] Error enabling sensors = %d.\n", timestamp, nErr);
+		fflush(Logfile);
+#endif
+		return nErr;
+	}
+
+	if(!strstr(resp,"NotSecure") && strstr(resp,"Secure") )
+		nErr = RoR_OK;
+	else
+		nErr = ERR_CMDFAILED;
+	
     return nErr;
 }
 
