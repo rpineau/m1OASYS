@@ -40,7 +40,7 @@ Cm1OASYS::Cm1OASYS()
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [Cm1OASYS] New Constructor Called\n", timestamp);
+    fprintf(Logfile, "[%s] [Cm1OASYS::Cm1OASYS] New Constructor Called\n", timestamp);
     fflush(Logfile);
 #endif
 
@@ -53,7 +53,7 @@ Cm1OASYS::~Cm1OASYS()
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [~Cm1OASYS] Destructor Called\n", timestamp );
+    fprintf(Logfile, "[%s] [Cm1OASYS::~Cm1OASYS] Destructor Called\n", timestamp );
     fflush(Logfile);
 #endif
 
@@ -98,7 +98,7 @@ int Cm1OASYS::Connect(const char *szPort)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error getting roof state = %d.\n", timestamp, nErr);
+        fprintf(Logfile, "[%s] [Cm1OASYS::Connect] Error getting roof state = %d.\n", timestamp, nErr);
         fflush(Logfile);
 #endif
         m_bIsConnected = false;
@@ -204,7 +204,7 @@ int Cm1OASYS::domeCommand(const char *cmd, char *result, int resultMaxLen)
 #endif
 
     if(result)
-        strncpy(result, &resp[1], resultMaxLen);
+        strncpy(result, &resp[2], resultMaxLen);
 
     return nErr;
 
@@ -214,6 +214,7 @@ int Cm1OASYS::enableSensors()
 {
     //11xx005sensoron0042
     int nErr = RoR_OK;
+    int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
     if(!m_bIsConnected)
@@ -233,23 +234,21 @@ int Cm1OASYS::enableSensors()
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error enabling sensors = %d.\n", timestamp, nErr);
+        fprintf(Logfile, "[%s] [Cm1OASYS::enableSensors] Error enabling sensors = %d.\n", timestamp, nErr);
         fflush(Logfile);
 #endif
         return nErr;
     }
-    // check for Secure
-    if(!strstr(resp,"ecure")) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [Cm1OASYS::Connect]error enabling sensors = %s.\n", timestamp, resp);
-        fflush(Logfile);
-#endif
-        nErr = COMMAND_FAILED;
-    }
 
+#if defined M1_DEBUG && M1_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS::enableSensors] Enabling sensors resp = %s.\n", timestamp, resp);
+    fflush(Logfile);
+#endif
+
+    m_pSleeper->sleep(1600);    // wait 1.6 seconds .. enabling sensors takes a long time and use to return a response but apparently not anymore
     return nErr;
 }
 
@@ -429,6 +428,13 @@ int Cm1OASYS::openShutter()
 
     nErr = enableSensors();
     if(nErr) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [Cm1OASYS::openShutter] Failled to enable sensor, not opening!\n", timestamp);
+        fflush(Logfile);
+#endif
         return COMMAND_FAILED;
     }
 
@@ -437,7 +443,7 @@ int Cm1OASYS::openShutter()
         return nErr;
     
     // check returned data to make sure the command was processed
-    while(!strstr(resp,"ATC001000D7")) {
+    while(!strstr(resp,"TC001000")) {
         
         //we're waiting for the answer
         if(timeout>50) {
@@ -485,6 +491,13 @@ int Cm1OASYS::closeShutter()
 
     nErr = enableSensors();
     if(nErr) {
+#if defined M1_DEBUG && M1_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [Cm1OASYS::closeShutter] Failled to enable sensor, not closing!\n", timestamp);
+        fflush(Logfile);
+#endif
         return COMMAND_FAILED;
     }
 
@@ -493,7 +506,7 @@ int Cm1OASYS::closeShutter()
         return nErr;
 
     // check returned data to make sure the command was processed
-    while(!strstr(resp,"ATC002000D6")) {
+    while(!strstr(resp,"TC002000")) {
         //we're waiting for the answer
         if(timeout>50) {
 #if defined M1_DEBUG && M1_DEBUG >= 2
