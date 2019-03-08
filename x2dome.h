@@ -1,8 +1,12 @@
-#include "m1OASYS.h"
+#include <stdio.h>
+#include <string.h>
+#include "../../licensedinterfaces/basicstringinterface.h"
 #include "../../licensedinterfaces/domedriverinterface.h"
 #include "../../licensedinterfaces/serialportparams2interface.h"
 #include "../../licensedinterfaces/modalsettingsdialoginterface.h"
 #include "../../licensedinterfaces/x2guiinterface.h"
+
+#include "m1OASYS.h"
 
 
 class SerXInterface;		
@@ -14,7 +18,7 @@ class MutexInterface;
 class BasicIniUtilInterface;
 class TickCountInterface;
 
-#define DRIVER_VERSION      1.3
+#define DRIVER_VERSION      1.4
 
 #define PARENT_KEY			"m1OASYS"
 #define CHILD_KEY_PORTNAME	"PortName"
@@ -109,7 +113,7 @@ public:
     virtual bool			isBaudRateFixed() const		{return true;}
 
     virtual SerXInterface::Parity	parity() const				{return SerXInterface::B_NOPARITY;}
-    virtual void					setParity(const SerXInterface::Parity& parity){parity;};
+    virtual void					setParity(const SerXInterface::Parity& parity){};
     virtual bool					isParityFixed() const		{return true;}
 
 
@@ -139,5 +143,4 @@ private:
 	int         m_nPrivateISIndex;
 	bool        m_bLinked;
     Cm1OASYS    m1OASYS;
-    char        mLogBuffer[LOG_BUFFER_SIZE];
 };

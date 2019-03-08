@@ -9,15 +9,31 @@
 #define __m1_OASYS__
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <memory.h>
+#ifdef SB_MAC_BUILD
+#include <unistd.h>
+#endif
+
+#ifdef SB_WIN_BUILD
+#include <time.h>
+#endif
+
+#include <string>
+
 #include "../../licensedinterfaces/sberrorx.h"
 #include "../../licensedinterfaces/serxinterface.h"
 #include "../../licensedinterfaces/loggerinterface.h"
 #include "../../licensedinterfaces/sleeperinterface.h"
 
+
 #define SERIAL_BUFFER_SIZE 256
 #define MAX_TIMEOUT 5000
 #define ND_LOG_BUFFER_SIZE 256
 
+// #define M1_DEBUG 2
 // error codes
 enum m1OASYSErrors {RoR_OK=0, NOT_CONNECTED, RoR_CANT_CONNECT, RoR_BAD_CMD_RESPONSE, COMMAND_FAILED};
 
@@ -32,11 +48,10 @@ public:
 
     int        Connect(const char *szPort);
     void        Disconnect(void);
-    bool        IsConnected(void) { return bIsConnected; }
+    bool        IsConnected(void) { return m_bIsConnected; }
 
-    void        SetSerxPointer(SerXInterface *p) { pSerx = p; }
-    void        setLogger(LoggerInterface *pLogger) { mLogger = pLogger; };
-    void        setSleeper(SleeperInterface *pSleeper) { mSleeper = pSleeper; };
+    void        SetSerxPointer(SerXInterface *p) { m_pSerx = p; }
+    void        setSleeper(SleeperInterface *pSleeper) { m_pSleeper = pSleeper; };
 
     // Dome commands
     int syncDome(double dAz, double dEl);
@@ -62,8 +77,6 @@ public:
 
     int getCurrentShutterState();
 
-    void setDebugLog(bool enable);
-
 protected:
 
     int             readResponse(char *respBuffer, unsigned int bufferLen);
@@ -74,21 +87,26 @@ protected:
     int             domeCommand(const char *cmd, char *result, int resultMaxLen);
     int             enableSensors(void);
     
-    LoggerInterface *mLogger;
-    SleeperInterface    *mSleeper;
-    
-    bool            bDebugLog;
+	SleeperInterface    *m_pSleeper;
 
-    bool            bIsConnected;
-    bool            mShutterOpened;
+    bool            m_bIsConnected;
+    bool            m_bShutterOpened;
 
-    double          mCurrentAzPosition;
-    double          mCurrentElPosition;
+    double          m_dCurrentAzPosition;
+    double          m_dCurrentElPosition;
 
-    SerXInterface   *pSerx;
+    SerXInterface   *m_pSerx;
 
-    int             mShutterState;
-    char            mLogBuffer[ND_LOG_BUFFER_SIZE];
+    int             m_nShutterState;
+
+#ifdef M1_DEBUG
+    std::string m_sLogfilePath;
+    // timestamp for logs
+    char *timestamp;
+    time_t ltime;
+    FILE *Logfile;      // LogFile
+#endif
+
 };
 
 #endif

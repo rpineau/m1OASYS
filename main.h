@@ -1,3 +1,5 @@
+#include "x2dome.h"
+
 #ifdef SB_WIN_BUILD
 	#define PlugInExport __declspec(dllexport)
 #else
