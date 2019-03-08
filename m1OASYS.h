@@ -33,7 +33,7 @@
 #define MAX_TIMEOUT 5000
 #define ND_LOG_BUFFER_SIZE 256
 
-#define M1_DEBUG 2
+// #define M1_DEBUG 2
 // error codes
 enum m1OASYSErrors {RoR_OK=0, NOT_CONNECTED, RoR_CANT_CONNECT, RoR_BAD_CMD_RESPONSE, COMMAND_FAILED};
 

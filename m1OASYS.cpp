@@ -247,7 +247,7 @@ int Cm1OASYS::enableSensors()
     fflush(Logfile);
 #endif
 
-    m_pSleeper->sleep(3000);    // wait 3 seconds .. enabling sensors takes a long time and use to return a response but apparently not anymore
+    m_pSleeper->sleep(3000);    // wait 3 seconds .. enabling sensors takes a long time
 
 	nErr = domeCommand("09xx00200B5\r\n", resp,  SERIAL_BUFFER_SIZE);
 	if(nErr) {
