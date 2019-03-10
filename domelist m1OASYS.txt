@@ -1,3 +1,3 @@
 //See hardwarelist.txt for details on this file format.
 //Version|Manufacturer|Model|Comment|MapsTo|PlugInDllName|X2Developer|Windows|Mac|Linux|
-2|Backyard Observatories|m1OASYS|m1 OASYS Observatory Automation System| |libm1OASYS||1|1|1|
+2|Backyard Observatories|m1 OASYS Observatory Automation System|X2Dome m1OASYS| |libm1OASYS||1|1|1|
