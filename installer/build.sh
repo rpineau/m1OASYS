@@ -1,11 +1,16 @@
 #!/bin/bash
 
+PACKAGE_NAME="m1OASYS_X2.pkg"
+BUNDLE_NAME="org.rti-zone.m1OASYSX2"
+
+if [ ! -z "$app_id_signature" ]; then
+    codesign -f -s "$app_id_signature" --verbose ../build/Release/libm1OASYS.dylib
+fi
+
 mkdir -p ROOT/tmp/m1OASYS_X2/
 cp "../domelist m1OASYS.txt" ROOT/tmp/m1OASYS_X2/
 cp "../build/Release/libm1OASYS.dylib" ROOT/tmp/m1OASYS_X2/
 
-PACKAGE_NAME="m1OASYS_X2.pkg"
-BUNDLE_NAME="org.rti-zone.m1OASYSX2"
 
 if [ ! -z "$installer_signature" ]; then
 	# signed package using env variable installer_signature
