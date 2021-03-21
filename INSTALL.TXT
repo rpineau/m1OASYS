@@ -1,5 +1,0 @@
-Install :
-Copy the  'domelist m1OASYS.txt'' file to the "Common/Miscellaneous Files" directory inside of TheSkyX Pro.
-Copy libm1OASYS.dll to the "Common/PlugIns/DomePlugIns" directory inside of TheSkyX Pro.
-
-

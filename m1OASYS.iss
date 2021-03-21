@@ -40,12 +40,17 @@ DirExistsWarning=no
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
+[Dirs]
+Name: "{app}\Plugins\DomePlugIns";
+Name: "{app}\Plugins64\DomePlugIns";
+
 [Files]
-; WIll also need to customise these!
-Source: "domelist m1OASYS.txt"; DestDir: "{app}\Miscellaneous Files"; Flags: ignoreversion
-Source: "libm1OASYS\Release\libm1OASYS.dll"; DestDir: "{app}\Plugins\DomePlugIns"; Flags: ignoreversion
-; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-; msgBox('Do you want to install MyProg.exe to ' + ExtractFilePath(CurrentFileName) + '?', mbConfirmation, MB_YESNO)
+Source: "domelist m1OASYS.txt";                     DestDir: "{app}\Miscellaneous Files"; Flags: ignoreversion
+Source: "domelist m1OASYS.txt";                     DestDir: "{app}\Miscellaneous Files"; Flags: ignoreversion; DestName: "domelist64 m1OASYS.txt"
+; 32 bits
+Source: "libm1OASYS\Win32\Release\libm1OASYS.dll";  DestDir: "{app}\Plugins\DomePlugIns"; Flags: ignoreversion
+; 64 bits
+Source: "libm1OASYS\x64\Release\libm1OASYS.dll";    DestDir: "{app}\Plugins64\DomePlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\DomePlugIns'))
 
 [Code]
 {* Below is a function to read TheSkyXInstallPath.txt and confirm that the directory does exist
