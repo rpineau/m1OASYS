@@ -28,14 +28,19 @@
 #include "../../licensedinterfaces/loggerinterface.h"
 #include "../../licensedinterfaces/sleeperinterface.h"
 
+#define DRIVER_VERSION      1.5
 
 #define SERIAL_BUFFER_SIZE 256
 #define MAX_TIMEOUT 5000
 #define ND_LOG_BUFFER_SIZE 256
 
-// #define M1_DEBUG 2
+#define MAX_READ_WAIT_TIMEOUT 25
+#define NB_RX_WAIT 100
+
+// #define PLUGIN_DEBUG 2
+
 // error codes
-enum m1OASYSErrors {RoR_OK=0, NOT_CONNECTED, RoR_CANT_CONNECT, RoR_BAD_CMD_RESPONSE, COMMAND_FAILED};
+enum m1OASYSErrors {PLUGIN_OK=0, NOT_CONNECTED, RoR_CANT_CONNECT, RoR_BAD_CMD_RESPONSE, COMMAND_FAILED, COMMAND_TIMEOUT};
 
 // Error code
 enum m1OASYSShutterState {OPEN=1, OPENING, CLOSED, CLOSING, SHUTTER_ERROR, UNKNOWN};
@@ -79,12 +84,13 @@ public:
 
 protected:
 
-    int             readResponse(char *respBuffer, unsigned int bufferLen);
+    int             domeCommand(const char *cmd, char *result, int resultMaxLen);
+    int             readResponse(char *szRespBuffer, unsigned int nBufferLen, int nTimeout = MAX_TIMEOUT);
+    
     int             getDomeAz(double &domeAz);
     int             getDomeEl(double &domeEl);
     int             getShutterState(int &state);
 
-    int             domeCommand(const char *cmd, char *result, int resultMaxLen);
     int             enableSensors(void);
     
 	SleeperInterface    *m_pSleeper;
@@ -99,7 +105,7 @@ protected:
 
     int             m_nShutterState;
 
-#ifdef M1_DEBUG
+#ifdef PLUGIN_DEBUG
     std::string m_sLogfilePath;
     // timestamp for logs
     char *timestamp;

@@ -21,7 +21,7 @@ Cm1OASYS::Cm1OASYS()
     m_bShutterOpened = false;
     m_nShutterState = UNKNOWN;
 
-#ifdef M1_DEBUG
+#ifdef PLUGIN_DEBUG
 #if defined(SB_WIN_BUILD)
     m_sLogfilePath = getenv("HOMEDRIVE");
     m_sLogfilePath += getenv("HOMEPATH");
@@ -36,7 +36,7 @@ Cm1OASYS::Cm1OASYS()
     Logfile = fopen(m_sLogfilePath.c_str(), "w");
 #endif
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -49,7 +49,7 @@ Cm1OASYS::Cm1OASYS()
 
 Cm1OASYS::~Cm1OASYS()
 {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -63,7 +63,7 @@ int Cm1OASYS::Connect(const char *szPort)
 {
     int nErr = SB_OK;
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -82,7 +82,7 @@ int Cm1OASYS::Connect(const char *szPort)
     if(!m_bIsConnected)
         return ERR_COMMNOLINK;
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -94,7 +94,7 @@ int Cm1OASYS::Connect(const char *szPort)
     // get the current shutter state just to check the connection, we don't care about the state for now.
     nErr = getShutterState(m_nShutterState);
     if(nErr) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -105,7 +105,7 @@ int Cm1OASYS::Connect(const char *szPort)
         return ERR_COMMNOLINK;
     }
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -128,65 +128,21 @@ void Cm1OASYS::Disconnect()
     m_bIsConnected = false;
 }
 
-
-int Cm1OASYS::readResponse(char *respBuffer, unsigned int bufferLen)
-{
-    int nErr = RoR_OK;
-    unsigned long nBytesRead = 0;
-    unsigned int totalBytesRead = 0;
-    char *bufPtr;
-
-    memset(respBuffer, 0, (size_t) bufferLen);
-    bufPtr = respBuffer;
-
-    do {
-        nErr = m_pSerx->readFile(bufPtr, 1, nBytesRead, MAX_TIMEOUT);
-        if(nErr) {
-#if defined DDW_DEBUG && DDW_DEBUG >= 2
-            ltime = time(NULL);
-            timestamp = asctime(localtime(&ltime));
-            timestamp[strlen(timestamp) - 1] = 0;
-            fprintf(Logfile, "[%s] [Cm1OASYS::readResponse] readFile error : %d\n", timestamp, nErr);
-            fflush(Logfile);
-#endif
-            return nErr;
-        }
-        if (nBytesRead !=1) {// timeout
-            nErr = RoR_BAD_CMD_RESPONSE;
-#if defined DDW_DEBUG && DDW_DEBUG >= 2
-            ltime = time(NULL);
-            timestamp = asctime(localtime(&ltime));
-            timestamp[strlen(timestamp) - 1] = 0;
-            fprintf(Logfile, "[%s] [Cm1OASYS::readResponse] readFile Timeout while getting response.\n", timestamp);
-            fflush(Logfile);
-#endif
-            break;
-        }
-        totalBytesRead += nBytesRead;
-    } while (*bufPtr++ != 0x0D && totalBytesRead < bufferLen );
-
-    if(totalBytesRead)
-        *(bufPtr-1) = 0; //remove the \r
-
-    return nErr;
-}
-
-
 int Cm1OASYS::domeCommand(const char *cmd, char *result, int resultMaxLen)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
     char resp[SERIAL_BUFFER_SIZE];
     unsigned long  nBytesWrite;
-
+    
     m_pSerx->purgeTxRx();
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
     fprintf(Logfile, "[%s] [Cm1OASYS::domeCommand] Sending %s\n", timestamp, cmd);
     fflush(Logfile);
 #endif
-
+    
     nErr = m_pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
     m_pSerx->flushTx();
     if(nErr)
@@ -195,31 +151,120 @@ int Cm1OASYS::domeCommand(const char *cmd, char *result, int resultMaxLen)
     if(nErr) {
         return nErr;
     }
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
     fprintf(Logfile, "[%s] [Cm1OASYS::domeCommand] response  = %s\n", timestamp, resp);
     fflush(Logfile);
 #endif
-
+    
     if(result)
         strncpy(result, &resp[2], resultMaxLen);
-
+    
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS::domeCommand] response copied = %s\n", timestamp, result);
+    fflush(Logfile);
+#endif
+    
     return nErr;
-
+    
 }
+
+
+int Cm1OASYS::readResponse(char *szRespBuffer, unsigned int nBufferLen, int nTimeout)
+{
+    int nErr = PLUGIN_OK;
+    unsigned long ulBytesRead = 0;
+    unsigned long ulTotalBytesRead = 0;
+    char *pszBufPtr;
+    int nBytesWaiting = 0 ;
+    int nbTimeouts = 0;
+    
+    memset(szRespBuffer, 0, (size_t) nBufferLen);
+    pszBufPtr = szRespBuffer;
+    
+    do {
+        nErr = m_pSerx->bytesWaitingRx(nBytesWaiting);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 3
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CRTIDome::readResponse] nBytesWaiting = %d\n", timestamp, nBytesWaiting);
+        fprintf(Logfile, "[%s] [CRTIDome::readResponse] nBytesWaiting nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        if(!nBytesWaiting) {
+            if(nbTimeouts++ >= NB_RX_WAIT) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+                ltime = time(NULL);
+                timestamp = asctime(localtime(&ltime));
+                timestamp[strlen(timestamp) - 1] = 0;
+                fprintf(Logfile, "[%s] [CRTIDome::readResponse] bytesWaitingRx timeout, no data for %d loops\n", timestamp, NB_RX_WAIT);
+                fflush(Logfile);
+#endif
+                nErr = ERR_RXTIMEOUT;
+                break;
+            }
+            m_pSleeper->sleep(MAX_READ_WAIT_TIMEOUT);
+            continue;
+        }
+        nbTimeouts = 0;
+        if(ulTotalBytesRead + nBytesWaiting <= nBufferLen)
+            nErr = m_pSerx->readFile(pszBufPtr, nBytesWaiting, ulBytesRead, nTimeout);
+        else {
+            nErr = ERR_RXTIMEOUT;
+            break; // buffer is full.. there is a problem !!
+        }
+        if(nErr) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            ltime = time(NULL);
+            timestamp = asctime(localtime(&ltime));
+            timestamp[strlen(timestamp) - 1] = 0;
+            fprintf(Logfile, "[%s] [CRTIDome::readResponse] readFile error.\n", timestamp);
+            fflush(Logfile);
+#endif
+            return nErr;
+        }
+        
+        if (ulBytesRead != nBytesWaiting) { // timeout
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            ltime = time(NULL);
+            timestamp = asctime(localtime(&ltime));
+            timestamp[strlen(timestamp) - 1] = 0;
+            fprintf(Logfile, "[%s] [CRTIDome::readResponse] readFile Timeout Error\n", timestamp);
+            fprintf(Logfile, "[%s] [CRTIDome::readResponse] readFile nBytesWaiting = %d\n", timestamp, nBytesWaiting);
+            fprintf(Logfile, "[%s] [CRTIDome::readResponse] readFile ulBytesRead = %lu\n", timestamp, ulBytesRead);
+            fflush(Logfile);
+#endif
+        }
+        
+        ulTotalBytesRead += ulBytesRead;
+        pszBufPtr+=ulBytesRead;
+    } while (ulTotalBytesRead < nBufferLen  && *(pszBufPtr-1) != 0x0D);
+    
+    if(!ulTotalBytesRead)
+        nErr = COMMAND_TIMEOUT; // we didn't get an answer.. so timeout
+    else
+        *(pszBufPtr-1) = 0; //remove the \r
+    
+    return nErr;
+}
+
 
 int Cm1OASYS::enableSensors()
 {
     //11xx005sensoron0042
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
     char resp[SERIAL_BUFFER_SIZE];
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -229,7 +274,7 @@ int Cm1OASYS::enableSensors()
 
     nErr = domeCommand("11xx005sensoron0042\r\n", resp,  SERIAL_BUFFER_SIZE);
     if(nErr) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -239,7 +284,7 @@ int Cm1OASYS::enableSensors()
         return nErr;
     }
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -251,7 +296,7 @@ int Cm1OASYS::enableSensors()
 
 	nErr = domeCommand("09xx00200B5\r\n", resp,  SERIAL_BUFFER_SIZE);
 	if(nErr) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
 		timestamp[strlen(timestamp) - 1] = 0;
@@ -262,7 +307,7 @@ int Cm1OASYS::enableSensors()
 	}
 
 	if(!strstr(resp,"NotSecure") && strstr(resp,"Secure") )
-		nErr = RoR_OK;
+		nErr = PLUGIN_OK;
 	else
 		nErr = ERR_CMDFAILED;
 	
@@ -271,7 +316,7 @@ int Cm1OASYS::enableSensors()
 
 int Cm1OASYS::getDomeAz(double &domeAz)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
@@ -284,7 +329,7 @@ int Cm1OASYS::getDomeAz(double &domeAz)
 
 int Cm1OASYS::getDomeEl(double &domeEl)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
@@ -304,14 +349,14 @@ int Cm1OASYS::getDomeEl(double &domeEl)
 
 int Cm1OASYS::getShutterState(int &state)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
     int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -324,9 +369,17 @@ int Cm1OASYS::getShutterState(int &state)
     if(nErr)
         return nErr;
     // wait for a proper response
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Cm1OASYS::getShutterState] Waiting for response.\n", timestamp);
+    fflush(Logfile);
+#endif
+    
     while(!strstr(resp,"open") && !strstr(resp,"closed") && !strstr(resp,"unknown")) {
         if(timeout>50) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 			ltime = time(NULL);
 			timestamp = asctime(localtime(&ltime));
 			timestamp[strlen(timestamp) - 1] = 0;
@@ -339,12 +392,19 @@ int Cm1OASYS::getShutterState(int &state)
         nErr = readResponse(resp, SERIAL_BUFFER_SIZE);
         m_pSleeper->sleep(100);
         timeout++;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [Cm1OASYS::getShutterState] timeout = %d !\n", timestamp, timeout);
+        fflush(Logfile);
+#endif
     }
 
     if(strstr(resp,"open")) {
         state = OPEN;
         m_bShutterOpened = true;
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
 		timestamp[strlen(timestamp) - 1] = 0;
@@ -354,7 +414,7 @@ int Cm1OASYS::getShutterState(int &state)
     } else if (strstr(resp,"close")) {
         state = CLOSED;
         m_bShutterOpened = false;
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
 		timestamp[strlen(timestamp) - 1] = 0;
@@ -364,7 +424,7 @@ int Cm1OASYS::getShutterState(int &state)
     } else {
         state = UNKNOWN;
         m_bShutterOpened = false;
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
 		timestamp[strlen(timestamp) - 1] = 0;
@@ -379,7 +439,7 @@ int Cm1OASYS::getShutterState(int &state)
 
 int Cm1OASYS::syncDome(double dAz, double dEl)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
@@ -390,7 +450,7 @@ int Cm1OASYS::syncDome(double dAz, double dEl)
 
 int Cm1OASYS::parkDome()
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
@@ -407,7 +467,7 @@ int Cm1OASYS::unparkDome()
 
 int Cm1OASYS::gotoAzimuth(double newAz)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
@@ -419,12 +479,12 @@ int Cm1OASYS::gotoAzimuth(double newAz)
 
 int Cm1OASYS::openShutter()
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
     int timeout = 0;
     
     char resp[SERIAL_BUFFER_SIZE];
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	ltime = time(NULL);
 	timestamp = asctime(localtime(&ltime));
 	timestamp[strlen(timestamp) - 1] = 0;
@@ -433,7 +493,7 @@ int Cm1OASYS::openShutter()
 #endif
 
 	if(!m_bIsConnected) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
 		timestamp[strlen(timestamp) - 1] = 0;
@@ -445,7 +505,7 @@ int Cm1OASYS::openShutter()
 
     nErr = enableSensors();
     if(nErr) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -464,7 +524,7 @@ int Cm1OASYS::openShutter()
         
         //we're waiting for the answer
         if(timeout>50) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 			ltime = time(NULL);
 			timestamp = asctime(localtime(&ltime));
 			timestamp[strlen(timestamp) - 1] = 0;
@@ -483,11 +543,11 @@ int Cm1OASYS::openShutter()
 
 int Cm1OASYS::closeShutter()
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
     int timeout = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	ltime = time(NULL);
 	timestamp = asctime(localtime(&ltime));
 	timestamp[strlen(timestamp) - 1] = 0;
@@ -496,7 +556,7 @@ int Cm1OASYS::closeShutter()
 #endif
 
     if(!m_bIsConnected) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
 		timestamp[strlen(timestamp) - 1] = 0;
@@ -508,7 +568,7 @@ int Cm1OASYS::closeShutter()
 
     nErr = enableSensors();
     if(nErr) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -526,7 +586,7 @@ int Cm1OASYS::closeShutter()
     while(!strstr(resp,"TC002000")) {
         //we're waiting for the answer
         if(timeout>50) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 			ltime = time(NULL);
 			timestamp = asctime(localtime(&ltime));
 			timestamp[strlen(timestamp) - 1] = 0;
@@ -547,7 +607,7 @@ int Cm1OASYS::closeShutter()
 
 int Cm1OASYS::isGoToComplete(bool &complete)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
@@ -558,12 +618,12 @@ int Cm1OASYS::isGoToComplete(bool &complete)
 
 int Cm1OASYS::isOpenComplete(bool &complete)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	ltime = time(NULL);
 	timestamp = asctime(localtime(&ltime));
 	timestamp[strlen(timestamp) - 1] = 0;
@@ -579,7 +639,7 @@ int Cm1OASYS::isOpenComplete(bool &complete)
         m_bShutterOpened = true;
         complete = true;
         m_dCurrentElPosition = 90.0;
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
 		timestamp[strlen(timestamp) - 1] = 0;
@@ -598,12 +658,12 @@ int Cm1OASYS::isOpenComplete(bool &complete)
 
 int Cm1OASYS::isCloseComplete(bool &complete)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
 
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	ltime = time(NULL);
 	timestamp = asctime(localtime(&ltime));
 	timestamp[strlen(timestamp) - 1] = 0;
@@ -618,7 +678,7 @@ int Cm1OASYS::isCloseComplete(bool &complete)
         m_bShutterOpened = false;
         complete = true;
         m_dCurrentElPosition = 0.0;
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
 		timestamp[strlen(timestamp) - 1] = 0;
@@ -638,7 +698,7 @@ int Cm1OASYS::isCloseComplete(bool &complete)
 
 int Cm1OASYS::isParkComplete(bool &complete)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
@@ -649,7 +709,7 @@ int Cm1OASYS::isParkComplete(bool &complete)
 
 int Cm1OASYS::isUnparkComplete(bool &complete)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
@@ -661,7 +721,7 @@ int Cm1OASYS::isUnparkComplete(bool &complete)
 
 int Cm1OASYS::isFindHomeComplete(bool &complete)
 {
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
 
     if(!m_bIsConnected)
         return NOT_CONNECTED;
@@ -676,10 +736,10 @@ int Cm1OASYS::abortCurrentCommand()
 
     // 09tn00300C2
 
-    int nErr = RoR_OK;
+    int nErr = PLUGIN_OK;
     char resp[SERIAL_BUFFER_SIZE];
     
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	ltime = time(NULL);
 	timestamp = asctime(localtime(&ltime));
 	timestamp[strlen(timestamp) - 1] = 0;
@@ -687,7 +747,7 @@ int Cm1OASYS::abortCurrentCommand()
 	fflush(Logfile);
 #endif
     if(!m_bIsConnected) {
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		ltime = time(NULL);
 		timestamp = asctime(localtime(&ltime));
 		timestamp[strlen(timestamp) - 1] = 0;
@@ -697,7 +757,7 @@ int Cm1OASYS::abortCurrentCommand()
         return NOT_CONNECTED;
     }
     
-#if defined M1_DEBUG && M1_DEBUG >= 2
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	ltime = time(NULL);
 	timestamp = asctime(localtime(&ltime));
 	timestamp[strlen(timestamp) - 1] = 0;

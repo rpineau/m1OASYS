@@ -18,7 +18,6 @@ class MutexInterface;
 class BasicIniUtilInterface;
 class TickCountInterface;
 
-#define DRIVER_VERSION      1.4
 
 #define PARENT_KEY			"m1OASYS"
 #define CHILD_KEY_PORTNAME	"PortName"
