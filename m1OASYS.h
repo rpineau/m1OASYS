@@ -8,7 +8,7 @@
 #ifndef __m1_OASYS__
 #define __m1_OASYS__
 #include <math.h>
-#include <string.h>
+#include <string.h> 
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
